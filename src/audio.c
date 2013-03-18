@@ -113,10 +113,10 @@ void audioDelete(Audio *audio)
     if (!audio)
         return;
         
-    int err = Pa_StopStream( stream );
+    int err = Pa_StopStream(audio->stream);
     if (err != paNoError)
         error("audioDelete stop: %s", Pa_GetErrorText(err) );
-    err = Pa_CloseStream( stream );
+    err = Pa_CloseStream(audio->stream);
     if (err != paNoError)
         error("audioDelete close: %s", Pa_GetErrorText(err) );
     err = Pa_Terminate();

@@ -1,5 +1,5 @@
 /**
- * FFT definitions and implementations.
+ * Audio I/O definitions and implementations.
  * 
  * Authors:
  *   Bob Jamison
@@ -25,46 +25,29 @@
 
 
 #include <stdio.h>
-#include <stdlib.h>
 #include <sdrlib.h>
 
-#include "fft.h"
 
-/**
- * Create a new Fft instance.
- * @return a new Fft instance
- */  
-Fft *fftCreate(int N)
-{
-    Fft *fft = (Fft *)malloc(sizeof(Fft));
-    if (!fft)
-        return fft;
-    fft->N    = N;
-    fft->in   = (fftw_complex*) fftw_malloc(sizeof(fftw_complex) * N);
-    fft->out  = (fftw_complex*) fftw_malloc(sizeof(fftw_complex) * N);
-    fft->plan = fftw_plan_dft_1d(N, fft->in, fft->out, FFTW_FORWARD, FFTW_ESTIMATE);
-    return fft;
-}
+#include "audio.h"
+#include "private.h"
 
-/**
- * Delete an Fft instance, stopping
- * any processing and freeing any resources.
- * @param fft an Fft instance.
- */   
-void fftDelete(Fft *fft)
+int dotest()
 {
-    if (!fft)
-        return;
-    fftw_destroy_plan(fft->plan);
-    free(fft->in);
-    free(fft->out);
-    free(fft);
+    Audio *audio = audioCreate();
+    if (!audio)
+        error("test fail");
+    else
+        trace("test success");
+    audioDelete(audio);
+    return TRUE;
 }
 
 
 
-void fftCompute(Fft *fft)
+
+int main(int argc, char **argv)
 {
-    fftw_execute(fft->plan);
+    dotest();
+    return 0;
 }
 

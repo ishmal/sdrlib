@@ -26,9 +26,16 @@
  *  Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
+#include <complex.h>
+#include <fftw3.h>
+
 
 typedef struct
 {
+    int N;
+    complex *in;
+    complex *out;
+    fftw_plan plan;
 } Fft;
 
 
@@ -47,6 +54,8 @@ Fft *fftCreate();
 void fftDelete(Fft *fft);
 
 
+
+void fftCompute(Fft *fft);
 
 #endif /* _FFT_H_ */
 
