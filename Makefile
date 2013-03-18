@@ -16,6 +16,8 @@ vpath %.c src
 
 SRC = \
 sdrlib.c \
+audio.c  \
+fft.c    \
 filter.c
 
 OBJ = $(patsubst %.c,obj/%.o,$(SRC))
