@@ -1,9 +1,6 @@
-#ifndef _AUDIO_H_
-#define _AUDIO_H_
-
 /**
- * Audio I/O definitions and implementations.
- * 
+ * Non-public definitions.
+ *
  * Authors:
  *   Bob Jamison
  *
@@ -26,31 +23,27 @@
  *  Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
+#include <stdio.h>
+#include <stdarg.h>
 
-#include <portaudio.h>
 
-typedef struct
+void trace(char *format, ...)
 {
-    PaStream *stream;
-    float sampleRate;
-} Audio;
+    fprintf(stderr, "trace: ");
+    va_list args;
+    va_start(args, format);
+    vfprintf(stderr, format, args);
+    va_end(args);
+    fprintf(stderr, "\n");
+}
 
-
-/**
- * Create a new Audio instance.
- * @return a new Audio instance
- */  
-Audio *audioCreate();
-
-
-/**
- * Delete an Audio instance, stopping
- * any processing and freeing any resources.
- * @param audio an Audio instance.
- */   
-void audioDelete(Audio *audio);
-
-
-
-#endif /* _AUDIO_H_ */
+void error(char *format, ...)
+{
+    fprintf(stderr, "err: ");
+    va_list args;
+    va_start(args, format);
+    vfprintf(stderr, format, args);
+    va_end(args);
+    fprintf(stderr, "\n");
+}
 

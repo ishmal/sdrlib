@@ -28,7 +28,26 @@
 #include <stdlib.h>
 #include <sdrlib.h>
 
+#include <portaudio.h>
+
 #include "audio.h"
+#include "private.h"
+
+#define SAMPLE_RATE 44100
+#define FRAMES_PER_BUFFER  64
+
+
+static int paCallback(const void *inputBuffer, void *outputBuffer,
+                      unsigned long framesPerBuffer,
+                      const PaStreamCallbackTimeInfo* timeInfo,
+                      PaStreamCallbackFlags statusFlags,
+                      void *userData)
+{
+    Audio *audio = (Audio *) userData;
+    trace("sampleRate:%f", audio->sampleRate);
+    return paContinue;
+}
+
 
 /**
  * Create a new Audio instance.
@@ -36,11 +55,52 @@
  */  
 Audio *audioCreate()
 {
-    Audio *inst = (Audio *)malloc(sizeof(Audio));
-    if (!inst)
-        return inst;
-    //TODO: setup here
-    return inst;
+    Audio *audio = (Audio *)malloc(sizeof(Audio));
+    if (!audio)
+        return audio;
+    audio->sampleRate = (float)SAMPLE_RATE;
+
+    int err = Pa_Initialize();
+    if ( err != paNoError )
+        {
+        error("audioCreate init: %s", Pa_GetErrorText(err) );
+        free(audio);
+        return NULL;
+        }
+    PaStreamParameters parms;
+    parms.device = Pa_GetDefaultOutputDevice();
+    parms.channelCount = 2;       /* stereo output */
+    parms.sampleFormat = paFloat32; /* 32 bit floating point output */
+    parms.hostApiSpecificStreamInfo = NULL;
+ 
+    err = Pa_OpenStream(
+            &(audio->stream),
+            NULL, /* no input */
+            &parms,
+            SAMPLE_RATE,
+            FRAMES_PER_BUFFER,
+            paClipOff,      /* we won't output out of range samples so don't bother clipping them */
+            paCallback,
+            (void *)audio );
+    if( err != paNoError )
+        {
+        error("audioCreate open: %s", Pa_GetErrorText(err) );
+        Pa_Terminate();
+        free(audio);
+        return NULL;
+        }
+ 
+    err = Pa_StartStream( audio->stream );
+    if( err != paNoError )
+        {
+        error("audioCreate start: %s", Pa_GetErrorText(err) );
+        Pa_CloseStream(audio->stream);
+        Pa_Terminate();
+        free(audio);
+        return NULL;
+        }
+ 
+    return audio;
 }
 
 /**
@@ -52,7 +112,16 @@ void audioDelete(Audio *audio)
 {
     if (!audio)
         return;
-    //TODO: clean up here
+        
+    int err = Pa_StopStream( stream );
+    if (err != paNoError)
+        error("audioDelete stop: %s", Pa_GetErrorText(err) );
+    err = Pa_CloseStream( stream );
+    if (err != paNoError)
+        error("audioDelete close: %s", Pa_GetErrorText(err) );
+    err = Pa_Terminate();
+    if ( err != paNoError )
+        error("audioDelete terminate: %s", Pa_GetErrorText(err) );
     free(audio);
 }
 
