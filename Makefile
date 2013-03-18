@@ -10,7 +10,7 @@ CC = gcc
 CFLAGS = -g -O2 -Wall
 
 
-LDFLAGS = -lc -lfftw
+LDFLAGS = -lc
 
 vpath %.c src
 
@@ -24,6 +24,7 @@ INC = -Isrc
 
 all : obj/sdrlib.a
 
+OBJ : | obj
 obj: 
 	@mkdir -p $@
 
@@ -31,11 +32,12 @@ obj/sdrlib.a : $(OBJ)
 	$(AR) crv $@ $<
 
 obj/%.o : %.c
+	@mkdir -p $(@D)
 	$(CC) $(CFLAGS) $(INC) -c $< -o $@
 
 
 clean:
-	$(RM) obj/*
+	$(RM) -r obj
 
 
 
