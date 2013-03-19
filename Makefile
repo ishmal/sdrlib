@@ -6,8 +6,8 @@
 ################################################################
 
 
-
-CC = gcc -arch x86_64
+CC = gcc
+#CC = gcc -arch x86_64
 
 
 
@@ -31,6 +31,11 @@ INC = -Isrc
 
 all : testme
 
+$(OBJ) : | obj
+
+obj :
+	mkdir -p obj
+
 testme: test/testme.c obj/libsdr.a
 	$(CC) $(CFLAGS) $(INC) test/testme.c $(LDFLAGS) -o $@
 
@@ -38,7 +43,6 @@ obj/libsdr.a : $(OBJ)
 	$(AR) rv $@ $(OBJ)
 
 obj/%.o : %.c
-	@mkdir -p $(@D)
 	$(CC) $(CFLAGS) $(INC) -c $< -o $@
 
 
