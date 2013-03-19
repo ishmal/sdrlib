@@ -7,6 +7,8 @@
 
 
 
+
+
 CC = gcc -arch x86_64
 
 
@@ -31,7 +33,9 @@ OBJ = $(patsubst %.c,obj/%.o,$(SRC))
 
 INC = -Isrc
 
-all : testme
+PLUGINS = plugin/plugin-rtl.so
+
+all : testme $(PLUGINS)
 
 testme: test/testme.c obj/libsdr.a
 	$(CC) $(CFLAGS) $(INC) test/testme.c $(LDFLAGS) -o $@
@@ -48,11 +52,27 @@ obj/%.o : %.c
 	$(CC) $(CFLAGS) $(INC) -c $< -o $@
 
 
+
+
+
+
+
+
 clean:
 	$(RM) testme
-	$(RM) -r obj
+	$(RM) -r obj plugin/*
 
 
+
+
+################################################################
+# PLUGINS
+################################################################
+
+PLUG = plugin/plugin-rtl.so
+
+plugin/plugin-rtl.so:  pluginsrc/plugin-rtl.c
+	$(CC) -dynamiclib $(CFLAGS) $(INC) $< -o $@ -lrtlsdr
 
 
 

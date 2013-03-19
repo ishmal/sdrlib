@@ -28,6 +28,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <dirent.h>
+#include <dlfcn.h>
 #include <limits.h>
 
 #include "plugin.h"
@@ -65,6 +66,7 @@ static char *getPluginDir()
 
 List *pluginScan(int type)
 {
+    List *xs = NULL;
     char *pluginDir = getPluginDir();  
     int dirLen = strlen(pluginDir);
     DIR *dir = opendir(pluginDir);
@@ -83,10 +85,29 @@ List *pluginScan(int type)
         strcat(fullName, "/");
         strcat(fullName, name);
         trace("full name: '%s'", fullName);
+        
+        void *dlib = dlopen(fullName, RTLD_LAZY);
+        if (dlib)
+            {
+            trace("got dynamic lib");
+            void *sym = dlsym(dlib, "pluginCreate");
+            if (sym)
+                {
+                trace("got function");
+                PluginCreateFunc *func = (PluginCreateFunc *)sym;
+                SdrPlugin *pi = func();
+                if (pi)
+                    {
+                    trace("got plugin!!");
+                    trace("Name: %s", pi->name);
+                    xs = listAppend(xs, pi);
+                    }
+                }
+            }
         free(fullName);
         }  
     free(pluginDir);
-    return NULL;
+    return xs;
     
 }
 

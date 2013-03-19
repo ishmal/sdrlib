@@ -1,5 +1,5 @@
-#ifndef _PRIVATE_H_
-#define _PRIVATE_H_
+#ifndef _UTIL_H_
+#define _UTIL_H_
 /**
  * Non-public definitions.
  *
@@ -27,20 +27,6 @@
 
 
 
-#define PI 3.141592654f
-#define TWOPI 6.283185307f
-
-#ifndef TRUE
-#define TRUE  1
-#endif
-
-#ifndef FALSE
-#define FALSE 0
-#endif
-
-
-void trace(char *format, ...);
-void error(char *format, ...);
 
 typedef struct List List;
 
@@ -61,10 +47,12 @@ List *listAppend(List *list, void *data);
  */
 List *listRemove(List *list, void *data);
 
+int listLength(List *list);
+
 void listForEach(List *list, ListFunc func);
 
 void listDelete(List *list, ListFunc func);
 
 
-#endif /* _PRIVATE_H_ */
+#endif /* _UTIL_H_ */
 

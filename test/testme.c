@@ -71,6 +71,15 @@ int test_list()
 int test_plugin()
 {
     List *xs = pluginScan(PLUGIN_SDR);
+    
+    int count = listLength(xs);
+    trace("count:%d", count);
+    
+
+    int i=0;
+    for ( ; i < 100000 ; i++)
+        {
+        }
     return TRUE;
 }
 

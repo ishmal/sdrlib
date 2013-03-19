@@ -26,6 +26,7 @@
  *  Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
+#include <complex.h>
 #include "util.h"
 
 typedef enum
@@ -36,17 +37,29 @@ typedef enum
 
 
 
-typedef struct
+
+typedef struct SdrPlugin SdrPlugin;
+
+struct SdrPlugin
 {
     int    type;
-    void   (*setSampleRate)(float rate);
-    float  (*getSampleRate)();
-    void   (*setCenterFrequency)(double freq);
-    double (*getCenterFrequency)();
-} SdrPlugin;
+    char   *name;
+    void   *ctx;
+    void   (*delete)(SdrPlugin *pi);
+    
+    void   (*setSampleRate)(void *ctx, float rate);
+    float  (*getSampleRate)(void *ctx);
+    void   (*setCenterFrequency)(void *ctx, double freq);
+    double (*getCenterFrequency)(void *ctx);
+    int    (*read)(void *ctx, float complex *buf, int len);
+};
 
 
 List *pluginScan(int type);
+
+
+typedef SdrPlugin* PluginCreateFunc();
+
 
 
 #endif /* _PLUGIN_H_ */

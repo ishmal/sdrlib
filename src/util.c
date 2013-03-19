@@ -65,6 +65,14 @@ List *listRemove(List *list, void *data)
     return list;
 }
 
+int listLength(List *list)
+{
+    int i = 0;
+    for ( ; list ; list=list->next)
+        i++;
+    return i;
+}
+
 
 void listForEach(List *list, ListFunc func)
 {
