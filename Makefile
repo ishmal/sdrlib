@@ -6,8 +6,8 @@
 ################################################################
 
 
-CC = gcc
-#CC = gcc -arch x86_64
+
+CC = gcc -arch x86_64
 
 
 
@@ -19,11 +19,13 @@ LDFLAGS = -Lobj -lsdr -lportaudio -lfftw3 -lm -lc
 vpath %.c src
 
 SRC = \
-sdrlib.c \
-audio.c  \
-fft.c    \
-filter.c \
-private.c
+sdrlib.c  \
+audio.c   \
+fft.c     \
+filter.c  \
+plugin.c  \
+private.c \
+util.c
 
 OBJ = $(patsubst %.c,obj/%.o,$(SRC))
 
@@ -31,13 +33,13 @@ INC = -Isrc
 
 all : testme
 
+testme: test/testme.c obj/libsdr.a
+	$(CC) $(CFLAGS) $(INC) test/testme.c $(LDFLAGS) -o $@
+
 $(OBJ) : | obj
 
 obj :
-	mkdir -p obj
-
-testme: test/testme.c obj/libsdr.a
-	$(CC) $(CFLAGS) $(INC) test/testme.c $(LDFLAGS) -o $@
+	@mkdir -p $@
 
 obj/libsdr.a : $(OBJ)
 	$(AR) rv $@ $(OBJ)

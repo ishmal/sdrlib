@@ -70,7 +70,8 @@ int test_list()
 
 int test_plugin()
 {
-    List *xs = pluginScan();
+    List *xs = pluginScan(PLUGIN_SDR);
+    return TRUE;
 }
 
 
@@ -78,6 +79,7 @@ int test_plugin()
 int dotests()
 {
     test_plugin();
+    return TRUE;
 }
 
 
