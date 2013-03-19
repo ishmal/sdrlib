@@ -61,7 +61,7 @@ obj/%.o : %.c
 
 clean:
 	$(RM) testme
-	$(RM) -r obj plugin/*
+	$(RM) -r obj device/*
 
 
 

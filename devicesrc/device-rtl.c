@@ -27,7 +27,7 @@
 #include <complex.h>
 #include <rtl-sdr.h>
 
-#include "plugin.h"
+#include "device.h"
 
 typedef struct
 {
@@ -111,32 +111,32 @@ static void shutdown(Context *ctx)
 }
 
 
-static void pluginDelete(SdrPlugin *pi)
+static void deviceDelete(Device *dv)
 {
-    shutdown((Context *)pi->ctx);
-    free(pi);
+    shutdown((Context *)dv->ctx);
+    free(dv);
 }
 
-SdrPlugin *pluginCreate()
+Device *deviceCreate()
 {
-    SdrPlugin *pi = (SdrPlugin *)malloc(sizeof(SdrPlugin));
-    if (!pi)
+    Device *dv = (Device *)malloc(sizeof(Device));
+    if (!dv)
         return NULL;
     Context *ctx = startup();
     if (!ctx)
         {
-        free(pi);
+        free(dv);
         return NULL;
         }
-    pi->type = PLUGIN_SDR,
-    pi->name               = "RTL - SDR Plugin";
-    pi->ctx                = (void *)ctx;
-    pi->delete             = pluginDelete;
-    pi->setSampleRate      = setSampleRate;
-    pi->getSampleRate      = getSampleRate;
-    pi->setCenterFrequency = setCenterFrequency;
-    pi->getCenterFrequency = getCenterFrequency;
-    pi->read               = read;
-    return pi;
+    dv->type = DEVICE_SDR,
+    dv->name               = "RTL - SDR Device";
+    dv->ctx                = (void *)ctx;
+    dv->delete             = deviceDelete;
+    dv->setSampleRate      = setSampleRate;
+    dv->getSampleRate      = getSampleRate;
+    dv->setCenterFrequency = setCenterFrequency;
+    dv->getCenterFrequency = getCenterFrequency;
+    dv->read               = read;
+    return dv;
 }
 
