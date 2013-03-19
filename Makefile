@@ -23,6 +23,7 @@ vpath %.c src
 SRC = \
 sdrlib.c  \
 audio.c   \
+device.c  \
 fft.c     \
 filter.c  \
 plugin.c  \
@@ -33,9 +34,9 @@ OBJ = $(patsubst %.c,obj/%.o,$(SRC))
 
 INC = -Isrc
 
-PLUGINS = plugin/plugin-rtl.so
+DEVICES = device/device-rtl.so
 
-all : testme $(PLUGINS)
+all : testme $(DEVICES)
 
 testme: test/testme.c obj/libsdr.a
 	$(CC) $(CFLAGS) $(INC) test/testme.c $(LDFLAGS) -o $@
@@ -66,12 +67,11 @@ clean:
 
 
 ################################################################
-# PLUGINS
+# DEVICES
 ################################################################
 
-PLUG = plugin/plugin-rtl.so
 
-plugin/plugin-rtl.so:  pluginsrc/plugin-rtl.c
+device/device-rtl.so:  devicesrc/device-rtl.c
 	$(CC) -dynamiclib $(CFLAGS) $(INC) $< -o $@ -lrtlsdr
 
 

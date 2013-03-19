@@ -31,7 +31,7 @@
 
 
 #include "audio.h"
-#include "plugin.h"
+#include "device.h"
 #include "private.h"
 
 int test_audio()
@@ -68,9 +68,9 @@ int test_list()
 }
 
 
-int test_plugin()
+int test_device()
 {
-    List *xs = pluginScan(PLUGIN_SDR);
+    List *xs = deviceScan(DEVICE_SDR);
     
     int count = listLength(xs);
     trace("count:%d", count);
@@ -87,7 +87,7 @@ int test_plugin()
 
 int dotests()
 {
-    test_plugin();
+    test_device();
     return TRUE;
 }
 

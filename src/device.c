@@ -1,5 +1,5 @@
 /**
- * API for adding things to this lib
+ * API for adding devices to this lib
  * 
  * Authors:
  *   Bob Jamison
@@ -31,7 +31,7 @@
 #include <dlfcn.h>
 #include <limits.h>
 
-#include "plugin.h"
+#include "device.h"
 #include "private.h"
 
 
@@ -51,25 +51,25 @@ static char *getExecutableDir()
         }
 }
 
-static char *getPluginDir()
+static char *getDeviceDir()
 {
     char *dir = getExecutableDir();
-    trace("Program dir is %s", dir);
+    //trace("Program dir is %s", dir);
     int len = strlen(dir) + 8;
-    char *pluginDir = (char *) malloc(len);
-    strcpy(pluginDir, dir);
-    strcat(pluginDir, "/plugin");
-    trace("Plugin dir is %s", pluginDir);
+    char *deviceDir = (char *) malloc(len);
+    strcpy(deviceDir, dir);
+    strcat(deviceDir, "/device");
+    //trace("Device dir is %s", deviceDir);
     free(dir);
-    return pluginDir;
+    return deviceDir;
 }
 
-List *pluginScan(int type)
+List *deviceScan(int type)
 {
     List *xs = NULL;
-    char *pluginDir = getPluginDir();  
-    int dirLen = strlen(pluginDir);
-    DIR *dir = opendir(pluginDir);
+    char *deviceDir = getDeviceDir();  
+    int dirLen = strlen(deviceDir);
+    DIR *dir = opendir(deviceDir);
     while (1)
         {
         struct dirent *de = readdir(dir);
@@ -81,7 +81,7 @@ List *pluginScan(int type)
         trace("name: '%s'", name);
         int fullLen = dirLen + 1 + strlen(name) + 1;
         char *fullName = (char *)malloc(fullLen);
-        strcpy(fullName, pluginDir);
+        strcpy(fullName, deviceDir);
         strcat(fullName, "/");
         strcat(fullName, name);
         trace("full name: '%s'", fullName);
@@ -90,15 +90,15 @@ List *pluginScan(int type)
         if (dlib)
             {
             trace("got dynamic lib");
-            void *sym = dlsym(dlib, "pluginCreate");
+            void *sym = dlsym(dlib, "deviceCreate");
             if (sym)
                 {
                 trace("got function");
-                PluginCreateFunc *func = (PluginCreateFunc *)sym;
-                SdrPlugin *pi = func();
+                DeviceCreateFunc *func = (DeviceCreateFunc *)sym;
+                Device *pi = func();
                 if (pi)
                     {
-                    trace("got plugin!!");
+                    trace("got device!!");
                     trace("Name: %s", pi->name);
                     xs = listAppend(xs, pi);
                     }
@@ -106,7 +106,7 @@ List *pluginScan(int type)
             }
         free(fullName);
         }  
-    free(pluginDir);
+    free(deviceDir);
     return xs;
     
 }

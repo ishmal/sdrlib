@@ -1,8 +1,8 @@
-#ifndef _PLUGIN_H_
-#define _PLUGIN_H_
+#ifndef _DEVICE_H_
+#define _DEVICE_H_
 
 /**
- * API for adding things to this lib
+ * API for adding devices to this lib
  * 
  * Authors:
  *   Bob Jamison
@@ -31,21 +31,21 @@
 
 typedef enum
 {
-    PLUGIN_NONE,
-    PLUGIN_SDR
-} PluginType;
+    DEVICE_NONE,
+    DEVICE_SDR
+} DeviceType;
 
 
 
 
-typedef struct SdrPlugin SdrPlugin;
+typedef struct Device Device;
 
-struct SdrPlugin
+struct Device
 {
     int    type;
     char   *name;
     void   *ctx;
-    void   (*delete)(SdrPlugin *pi);
+    void   (*delete)(Device *pi);
     
     void   (*setSampleRate)(void *ctx, float rate);
     float  (*getSampleRate)(void *ctx);
@@ -55,13 +55,13 @@ struct SdrPlugin
 };
 
 
-List *pluginScan(int type);
+List *deviceScan(int type);
 
 
-typedef SdrPlugin* PluginCreateFunc();
+typedef Device* DeviceCreateFunc();
 
 
 
-#endif /* _PLUGIN_H_ */
+#endif /* _DEVICE_H_ */
 
 
