@@ -24,7 +24,10 @@
  */
 
 #include <stdio.h>
+#include <stdlib.h>
 #include <stdarg.h>
+
+#include "private.h"
 
 
 void trace(char *format, ...)
@@ -46,4 +49,70 @@ void error(char *format, ...)
     va_end(args);
     fprintf(stderr, "\n");
 }
+
+
+
+
+List *listAppend(List *list, void *data)
+{
+    List *node = (List *)malloc(sizeof(List));
+    if (!node)
+        return NULL;
+    node->next = NULL;
+    node->data = data;
+    if (list)
+        {
+        while (list->next)
+            list = list->next;
+        list->next = node;
+        }
+    return node;
+}
+
+List *listRemove(List *list, void *data)
+{
+    List *curr = list;
+    List *next = NULL;
+    List *prev = NULL;
+    while (curr)
+        {
+        next = curr->next;
+        if (list->data == data)
+            {
+            free(curr);
+            if (prev)
+                prev->next = next;
+            else
+                list = next;
+            }
+        prev = curr;
+        curr = next;
+        }
+    return list;
+}
+
+
+void listForEach(List *list, ListFunc func)
+{
+    for ( ; list ; list=list->next)
+        func(list->data);
+}
+
+void listDelete(List *list, ListFunc func)
+{
+    List *curr = list;
+    List *next = NULL;
+    while (curr)
+        {
+        next = curr->next;
+        if (func)
+            func(curr->data);
+        free(curr);
+        curr = next;
+        }
+}
+
+
+
+
 

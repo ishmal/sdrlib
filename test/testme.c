@@ -25,13 +25,16 @@
 
 
 #include <stdio.h>
+#include <string.h>
+#include <stdlib.h>
 #include <sdrlib.h>
 
 
 #include "audio.h"
+#include "plugin.h"
 #include "private.h"
 
-int dotest()
+int test_audio()
 {
     Audio *audio = audioCreate();
     if (!audio)
@@ -43,11 +46,44 @@ int dotest()
 }
 
 
+void test_list_print(void *data)
+{
+    char *str = (char *) data;
+    printf("str: %s\n", str);
+}
+
+int test_list()
+{
+    List *xs = listAppend(NULL, strdup("The"));
+    listAppend(xs, strdup("The"));
+    listAppend(xs, strdup("Quick"));
+    listAppend(xs, strdup("Brown"));
+    listAppend(xs, strdup("Fox"));
+
+    listForEach(xs, test_list_print);
+    
+    listDelete(xs, free);
+
+    return TRUE;
+}
+
+
+int test_plugin()
+{
+    List *xs = pluginScan();
+}
+
+
+
+int dotests()
+{
+    test_plugin();
+}
 
 
 int main(int argc, char **argv)
 {
-    dotest();
+    dotests();
     return 0;
 }
 

@@ -42,6 +42,29 @@
 void trace(char *format, ...);
 void error(char *format, ...);
 
+typedef struct List List;
+
+struct List
+{
+    List *next;
+    void *data;
+};
+
+
+typedef void ListFunc(void *data);
+
+List *listAppend(List *list, void *data);
+
+/**
+ * Note that you should use the return List *,
+ * in case the first element was removed
+ */
+List *listRemove(List *list, void *data);
+
+void listForEach(List *list, ListFunc func);
+
+void listDelete(List *list, ListFunc func);
+
 
 #endif /* _PRIVATE_H_ */
 
