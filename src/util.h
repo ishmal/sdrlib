@@ -54,5 +54,10 @@ void listForEach(List *list, ListFunc func);
 void listDelete(List *list, ListFunc func);
 
 
+
+
+
+
+
 #endif /* _UTIL_H_ */
 

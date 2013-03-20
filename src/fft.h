@@ -36,6 +36,8 @@ typedef struct
     complex *in;
     complex *out;
     fftw_plan plan;
+    unsigned int *spectrum;
+    int inPtr;
 } Fft;
 
 
@@ -43,7 +45,7 @@ typedef struct
  * Create a new Fft instance.
  * @return a new Fft instance
  */  
-Fft *fftCreate();
+Fft *fftCreate(int N);
 
 
 /**
@@ -55,7 +57,9 @@ void fftDelete(Fft *fft);
 
 
 
-void fftCompute(Fft *fft);
+typedef void FftOutputFunc(unsigned int *vals, int size, void *context);
+
+void fftCompute(Fft *fft, FftOutputFunc *func, void *context);
 
 #endif /* _FFT_H_ */
 
