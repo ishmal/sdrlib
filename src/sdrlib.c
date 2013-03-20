@@ -34,6 +34,8 @@
 #include <sdrlib.h>
 
 
+#include "impl.h"
+
 /**
  * Create a new SdrLib instance.
  * @return a new SdrLib instance
@@ -42,7 +44,12 @@ SdrLib *sdrCreate()
 {
     SdrLib *inst = (SdrLib *)malloc(sizeof(SdrLib));
     if (!inst)
-        return inst;
+        return NULL;
+    if (!implCreate(inst))
+        {
+        free(inst);
+        return NULL;
+        }
     return inst;
 }
 
@@ -51,11 +58,30 @@ SdrLib *sdrCreate()
  * any processing and freeing any resources.
  * @param sdrlib and SDRLib instance.
  */   
-void sdrDelete(SdrLib *sdrlib)
+int sdrClose(SdrLib *sdrlib)
 {
-    if (!sdrlib)
-        return;
-    //TODO: clean up here
+    int ret = implClose(sdrlib);
     free(sdrlib);
+    return ret;
 }
 
+
+
+/**
+ * Start sdrlib processing
+ * @param sdrlib and SDRLib instance.
+ */   
+int sdrStart(SdrLib *sdrlib)
+{
+    return implStart(sdrlib);
+}
+
+
+/**
+ * Stop sdrlib processing
+ * @param sdrlib and SDRLib instance.
+ */   
+int sdrStop(SdrLib *sdrlib)
+{
+    return implStop(sdrlib);
+}

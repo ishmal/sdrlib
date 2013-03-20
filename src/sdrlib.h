@@ -38,7 +38,7 @@ extern "C" {
 
 typedef struct
 {
-    int x;
+    void *impl;
 } SdrLib;
 
 /**
@@ -47,12 +47,30 @@ typedef struct
  */  
 SdrLib *sdrCreate();
 
+
 /**
  * Delete an SdrLib instance, stopping
  * any processing and freeing any resources.
  * @param sdrlib and SDRLib instance.
  */   
-void sdrDelete(SdrLib *sdrlib);
+int sdrClose(SdrLib *sdrlib);
+
+
+
+/**
+ * Start sdrlib processing
+ * @param sdrlib and SDRLib instance.
+ */   
+int sdrStart(SdrLib *sdrlib);
+
+
+
+/**
+ * Stop sdrlib processing
+ * @param sdrlib and SDRLib instance.
+ */   
+int sdrStop(SdrLib *sdrlib);
+
 
 
 

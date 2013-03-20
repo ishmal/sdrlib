@@ -60,10 +60,19 @@ struct Device
     void *ctx;
     
     /**
-     * All devices must provide a function to shut down and free resources,
-     * including the context and struct.
+     * If this device is the selected one, then call this to open it.
      */
-    void (*close)(void *ctx);
+    int (*open)(void *ctx);
+
+    /**
+     * If this is the open device, then it should be closed when done
+     */
+    int (*close)(void *ctx);
+
+    /**
+     * This should be called at end of processing.
+     */
+    int (*delete)(void *ctx);
     
     
     /**
@@ -116,7 +125,12 @@ struct Device
 };
 
 
-List *deviceScan(int type);
+/**
+ * Look in a special directory for dynamic libs defining
+ * devices.  add them to a list.
+ * @return the count of devices loaded
+ */
+int deviceScan(int type, Device **buffer, int maxDevices);
 
 
 typedef struct Parent Parent;

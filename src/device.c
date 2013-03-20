@@ -36,7 +36,6 @@
 
 static Parent parent;
 
-
 static char *getExecutableDir()
 {
     char pathName[PATH_MAX+1];
@@ -66,15 +65,16 @@ static char *getDeviceDir()
     return deviceDir;
 }
 
-List *deviceScan(int type)
+int deviceScan(int type, Device **outbuf, int maxDevices)
 {
     parent.trace = trace;
     parent.error = error;
-    List *xs = NULL;
+    
     char *deviceDir = getDeviceDir();  
     int dirLen = strlen(deviceDir);
     DIR *dir = opendir(deviceDir);
-    while (1)
+    int count = 0;
+    while (count < maxDevices)
         {
         struct dirent *de = readdir(dir);
         if (!de)
@@ -94,7 +94,7 @@ List *deviceScan(int type)
         if (dlib)
             {
             trace("got dynamic lib");
-            void *sym = dlsym(dlib, "deviceOpen");
+            void *sym = dlsym(dlib, "deviceCreate");
             if (sym)
                 {
                 trace("got function");
@@ -103,14 +103,14 @@ List *deviceScan(int type)
                 if (!dev)
                     {
                     error("creating Device info structure");
-                    return xs;
+                    return count;
                     }
                 int ret = func(dev, &parent);
                 if (ret)
                     {
                     trace("got device!!");
                     trace("Name: %s", dev->name);
-                    xs = listAppend(xs, dev);
+                    outbuf[count++] = dev;
                     }
                 else
                     {
@@ -120,8 +120,9 @@ List *deviceScan(int type)
             }
         free(fullName);
         }  
+    
     free(deviceDir);
-    return xs;
+    return count;
     
 }
 
