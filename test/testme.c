@@ -46,49 +46,58 @@ int test_audio()
 }
 
 
-void test_list_print(void *data)
-{
-    char *str = (char *) data;
-    printf("str: %s\n", str);
-}
 
-int test_list()
-{
-    List *xs = listAppend(NULL, strdup("The"));
-    listAppend(xs, strdup("The"));
-    listAppend(xs, strdup("Quick"));
-    listAppend(xs, strdup("Brown"));
-    listAppend(xs, strdup("Fox"));
-
-    listForEach(xs, test_list_print);
-    
-    listDelete(xs, free);
-
-    return TRUE;
-}
-
-
-void test_device_close(void *data)
-{
-    Device *dv = (Device *)data;
-    dv->close(dv->ctx);
-}
 
 int test_device()
 {
-    List *xs = deviceScan(DEVICE_SDR);
+    Device *devices[20];
+    int count = deviceScan(DEVICE_SDR, devices, 20);
     
-    int count = listLength(xs);
     trace("count:%d", count);
     
+    Device *di = devices[0];
+    
+    di->setGain(di->ctx, 1.0);
+    di->setSampleRate(di->ctx, 1234567.0);
+    di->setCenterFrequency(di->ctx, 93700000.0);
+    
+    trace("Name      : %s", di->name);
+    trace("Gain      : %f", di->getGain(di->ctx));
+    trace("SampleRate: %f", di->getSampleRate(di->ctx));
+    trace("CenterFreq: %f", di->getCenterFrequency(di->ctx));
 
     int i=0;
     for ( ; i < 100000 ; i++)
         {
         }
         
-    listForEach(xs, test_device_close);
-    listDelete(xs, free);
+    return TRUE;
+}
+
+int test_main()
+{
+    SdrLib *sdr = sdrCreate();    
+    if (!sdr)
+        {
+        error("Failure initializing sdrlib");
+        return FALSE;
+        }
+    if (!sdrStart(sdr))
+        {
+        error("Failure initializing sdrlib");
+        }
+    sleep(10);
+    if (!sdrStop(sdr))
+        {
+        error("Failure initializing sdrlib");
+        }
+    if (!sdrClose(sdr))
+        {
+        error("Failure initializing sdrlib");
+        }
+        
+        
+    
     return TRUE;
 }
 
@@ -96,7 +105,7 @@ int test_device()
 
 int dotests()
 {
-    test_device();
+    test_main();
     return TRUE;
 }
 
