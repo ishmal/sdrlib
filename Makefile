@@ -26,7 +26,7 @@ audio.c   \
 device.c  \
 fft.c     \
 filter.c  \
-plugin.c  \
+impl.c    \
 private.c \
 util.c
 
