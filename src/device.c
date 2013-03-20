@@ -34,6 +34,8 @@
 #include "device.h"
 #include "private.h"
 
+static Parent parent;
+
 
 static char *getExecutableDir()
 {
@@ -66,6 +68,8 @@ static char *getDeviceDir()
 
 List *deviceScan(int type)
 {
+    parent.trace = trace;
+    parent.error = error;
     List *xs = NULL;
     char *deviceDir = getDeviceDir();  
     int dirLen = strlen(deviceDir);
@@ -90,17 +94,27 @@ List *deviceScan(int type)
         if (dlib)
             {
             trace("got dynamic lib");
-            void *sym = dlsym(dlib, "deviceCreate");
+            void *sym = dlsym(dlib, "deviceOpen");
             if (sym)
                 {
                 trace("got function");
-                DeviceCreateFunc *func = (DeviceCreateFunc *)sym;
-                Device *pi = func();
-                if (pi)
+                DeviceOpenFunc *func = (DeviceOpenFunc *)sym;
+                Device *dev = (Device *)malloc(sizeof(Device));
+                if (!dev)
+                    {
+                    error("creating Device info structure");
+                    return xs;
+                    }
+                int ret = func(dev, &parent);
+                if (ret)
                     {
                     trace("got device!!");
-                    trace("Name: %s", pi->name);
-                    xs = listAppend(xs, pi);
+                    trace("Name: %s", dev->name);
+                    xs = listAppend(xs, dev);
+                    }
+                else
+                    {
+                    free(dev);
                     }
                 }
             }

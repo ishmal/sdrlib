@@ -68,6 +68,12 @@ int test_list()
 }
 
 
+void test_device_close(void *data)
+{
+    Device *dv = (Device *)data;
+    dv->close(dv->ctx);
+}
+
 int test_device()
 {
     List *xs = deviceScan(DEVICE_SDR);
@@ -80,6 +86,9 @@ int test_device()
     for ( ; i < 100000 ; i++)
         {
         }
+        
+    listForEach(xs, test_device_close);
+    listDelete(xs, free);
     return TRUE;
 }
 

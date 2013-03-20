@@ -40,25 +40,95 @@ typedef enum
 
 typedef struct Device Device;
 
+
+
+/**
+ * This API for a Device tries to provide a uniform
+ * model for controlling different devices.  It is
+ * up to writers of the "glue" for each device to
+ * provide the mapping to/from the real devices.
+ */
 struct Device
 {
     int    type;
     char   *name;
-    void   *ctx;
-    void   (*delete)(Device *pi);
     
-    void   (*setSampleRate)(void *ctx, float rate);
-    float  (*getSampleRate)(void *ctx);
-    void   (*setCenterFrequency)(void *ctx, double freq);
+    /**
+     * Pointer to context information provided by the device.  This will be passed
+     * back in subsequent calls to the functions.
+     */
+    void *ctx;
+    
+    /**
+     * All devices must provide a function to shut down and free resources,
+     * including the context and struct.
+     */
+    void (*close)(void *ctx);
+    
+    
+    /**
+     * Set the gain in the range of 0.0 - 1.0
+     * @return true if successful, else false
+     */
+    int (*setGain)(void *ctx, float gain);
+    /**
+     * Get the gain in the range of 0.0 - 1.0
+     */
+    float(*getGain)(void *ctx);
+    
+    /**
+     * Set the sample rate in samples per second
+     * @return true if successful, else false
+     */
+    int (*setSampleRate)(void *ctx, float rate);
+    /**
+     * Get the sample rate in samples per second
+     */
+    float (*getSampleRate)(void *ctx);
+    
+    
+    /**
+     * Set the center frequency of the SDR device
+     * @return true if successful, else false
+     */
+    int (*setCenterFrequency)(void *ctx, double freq);
+    /**
+     * Get the center frequency of the SDR device
+     */
     double (*getCenterFrequency)(void *ctx);
-    int    (*read)(void *ctx, float complex *buf, int len);
+    
+    /**
+     * Read/write complex data to/from the device
+     * @return true if successful, else false
+     */
+    int (*read)(void *ctx, float complex *buf, int bufferlen);
+    /**
+     * Read/write complex data to/from the device
+     * @return true if successful, else false
+     */
+    int (*write)(void *ctx, float complex *buf, int datalen);
+    
+    /**
+     * True to set the device into transmit mode
+     * @return true if successful, else false
+     */
+    int (*transmit)(void *ctx, int truefalse);
 };
 
 
 List *deviceScan(int type);
 
 
-typedef Device* DeviceCreateFunc();
+typedef struct Parent Parent;
+
+struct Parent
+{
+    void (*trace)(char *format, ...);
+    void (*error)(char *format, ...);
+};
+
+
+typedef int DeviceOpenFunc(Device *, Parent *);
 
 
 

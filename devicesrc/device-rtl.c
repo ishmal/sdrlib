@@ -23,6 +23,7 @@
  *  Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
+#include <stdio.h>
 #include <stdlib.h>
 #include <complex.h>
 #include <rtl-sdr.h>
@@ -31,16 +32,37 @@
 
 typedef struct
 {
-    unsigned char *readbuf;
     rtlsdr_dev_t *dev;
-    complex *lut;
+    float complex *lut;
+    float gainscale;
+    unsigned char *readbuf;
+    Parent *par;
 } Context;
 
 #define DEV (((Context*)ctx)->dev)
+#define LUT (((Context*)ctx)->lut)
+#define GAINSCALE (((Context*)ctx)->gainscale)
+#define READBUF (((Context*)ctx)->readbuf)
 
-static void setSampleRate(void *ctx, float rate)
+
+static int setGain(void *ctx, float gain)
 {
-    rtlsdr_set_sample_rate(DEV, (int)rate);
+    //the int param for rtl gain is tenths of a dB
+    int dgain = (int)(gain * GAINSCALE);
+    int ret = rtlsdr_set_tuner_gain(DEV, dgain);
+    return !ret;
+}
+
+static float getGain(void *ctx)
+{
+    int dgain = rtlsdr_get_sample_rate(DEV);
+    return ((float)dgain) / GAINSCALE;
+}
+
+static int setSampleRate(void *ctx, float rate)
+{
+    int ret = rtlsdr_set_sample_rate(DEV, (int)rate);
+    return !ret;
 }
 
 static float getSampleRate(void *ctx)
@@ -48,9 +70,10 @@ static float getSampleRate(void *ctx)
     return (float) rtlsdr_get_sample_rate(DEV);
 }
 
-static void setCenterFrequency(void *ctx, double freq)
+static int setCenterFrequency(void *ctx, double freq)
 {
-    rtlsdr_set_center_freq(DEV, (uint32_t)freq);
+    int ret = rtlsdr_set_center_freq(DEV, (uint32_t)freq);
+    return !ret;
 }
 
 static double getCenterFrequency(void *ctx)
@@ -60,30 +83,58 @@ static double getCenterFrequency(void *ctx)
 }
 
 
-static int read(void *ctxt, float complex *cbuf, int len)
+static int read(void *ctx, float complex *cbuf, int buflen)
 {
-    Context *ctx = (Context *) ctxt;
-    unsigned char *bbuf = ctx->readbuf;
+    unsigned char *bbuf = READBUF;
+    float complex *lut = LUT;
     int count;
-    rtlsdr_read_sync(ctx->dev, bbuf, len<<1, &count);
+    rtlsdr_read_sync(DEV, bbuf, buflen<<1, &count);
     float complex *b = cbuf;
     int i=0;
     while (i<count)
         {
         int hi = bbuf[i++];
         int lo = bbuf[i++];
-        *b++ = ctx->lut[(hi<<8) + lo];
+        *b++   = lut[(hi<<8) + lo];
         }
     return count>>1;
 }
 
-static Context *startup()
+static int write(void *ctx, float complex *cbuf, int datalen)
 {
+    return 0;
+}
+
+static int transmit(void *ctx, int truefalse)
+{
+    return 0;
+}
+
+static Context *startup(Parent *par)
+{
+    rtlsdr_dev_t *dev = NULL;
+    int devCount = rtlsdr_get_device_count();
+    par->trace("devices:%d", devCount);
+    int ret = rtlsdr_open(&dev, 0);
+    if (!dev)
+        {
+        par->error("Could not open device");
+        return NULL;
+        }
+    ret = rtlsdr_set_tuner_gain_mode(dev, 1);
+    int count = rtlsdr_get_tuner_gains(dev, NULL);
+    int *gains = (int *)malloc(count * sizeof(int));
+    ret = rtlsdr_get_tuner_gains(dev, gains);
+    int higain = gains[count - 1];
+    par->trace("hi gain: %d", higain);
+
     Context *ctx = (Context *)malloc(sizeof(Context));
     if (!ctx)
         return NULL;
+    ctx->gainscale = (float)higain;
+    ctx->dev = dev;
     ctx->readbuf = (unsigned char *)malloc(1000000);
-    ctx->lut = (complex *)malloc(256 * 256 * sizeof(complex));
+    ctx->lut = (float complex *)malloc(256 * 256 * sizeof(float complex));
     int idx = 0;
     int hi,lo;
     for (hi = 0 ; hi < 256 ; hi++)
@@ -95,14 +146,12 @@ static Context *startup()
             ctx->lut[idx++] = hival+loval*I; 
             }    
         }
-    rtlsdr_dev_t *dev;
-    int ret = rtlsdr_open(&dev, idx);
-    ctx->dev = dev;
     return ctx;
 }
 
-static void shutdown(Context *ctx)
+static void shutdown(void *context)
 {
+    Context *ctx = (Context *)context;
     //do shutdowny things here
     rtlsdr_close(ctx->dev);
     free(ctx->readbuf);
@@ -111,32 +160,27 @@ static void shutdown(Context *ctx)
 }
 
 
-static void deviceDelete(Device *dv)
+int deviceOpen(Device *dv, Parent *parent)
 {
-    shutdown((Context *)dv->ctx);
-    free(dv);
-}
-
-Device *deviceCreate()
-{
-    Device *dv = (Device *)malloc(sizeof(Device));
-    if (!dv)
-        return NULL;
-    Context *ctx = startup();
+    Context *ctx = startup(parent);
     if (!ctx)
         {
         free(dv);
-        return NULL;
+        return 0;
         }
     dv->type = DEVICE_SDR,
     dv->name               = "RTL - SDR Device";
     dv->ctx                = (void *)ctx;
-    dv->delete             = deviceDelete;
+    dv->close              = shutdown;
+    dv->setGain            = setGain;
+    dv->getGain            = getGain;
     dv->setSampleRate      = setSampleRate;
     dv->getSampleRate      = getSampleRate;
     dv->setCenterFrequency = setCenterFrequency;
     dv->getCenterFrequency = getCenterFrequency;
     dv->read               = read;
-    return dv;
+    dv->write              = write;
+    dv->transmit           = transmit;
+    return 1;
 }
 
