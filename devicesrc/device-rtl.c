@@ -55,7 +55,7 @@ static int setGain(void *ctx, float gain)
 
 static float getGain(void *ctx)
 {
-    int dgain = rtlsdr_get_sample_rate(DEV);
+    int dgain = rtlsdr_get_tuner_gain(DEV);
     return ((float)dgain) / GAINSCALE;
 }
 
