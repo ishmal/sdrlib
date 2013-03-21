@@ -27,6 +27,12 @@
 
 #include <complex.h>
 
+
+//########################################################################
+//#  F I R    F I L T E R S
+//########################################################################
+
+
 /**
  * Defines a base for a FIR filter
  */
@@ -37,15 +43,9 @@ typedef struct
     float *coeffs;
     int delayIndex;
     float *delayLine;
+    float complex *delayLineC;
 } Fir;
 
-typedef struct
-{
-    int size;
-    float *coeffs;
-    int delayIndex;
-    complex *delayLine;
-} FirC;
 
 enum
 {
@@ -70,18 +70,6 @@ void firDelete(Fir *fir);
 
 
 /**
- * Creates an empty FIR filter with no coefficients.
- * Users would normally not use this, rather use a factory function.
- */
-FirC *firCreateC(int size);
-
-/**
- * Frees up a FIR filter and any allocated resources
- */
-void firDeleteC(FirC *fir);
-
-
-/**
  * Update a real-valued FIR filter with a sample.
  * @param fir the filter to update
  * @param sample the sample to add
@@ -97,7 +85,7 @@ float firUpdate(Fir *fir, float sample);
  * @param sample the sample to add
  * @return the current output of the filter
  */
-complex firUpdateC(FirC *fir, complex sample);
+float complex firUpdateC(Fir *fir, float complex sample);
 
 
 /**
@@ -107,9 +95,84 @@ Fir *firLP(int size, float cutoffFreq, float sampleRate, int windowType);
 
 
 /**
- * Create a FIR lowpass filter
+ * Create a FIR highpass filter
  */
-FirC *firLPC(int size, float cutoffFreq, float sampleRate, int windowType);
+Fir *firHP(int size, float cutoffFreq, float sampleRate, int windowType);
+
+
+/**
+ * Create a FIR bandpass filter
+ */
+Fir *firBP(int size, float loCutoffFreq, float hiCutoffFreq, float sampleRate, int windowType);
+
+
+//########################################################################
+//#  D E C I M A T O R 
+//#  A special type of FIR
+//########################################################################
+
+
+typedef struct
+{
+    int size;
+    float *coeffs;
+    float complex *delayLine;
+    int delayIndex;
+    float ratio;
+    float acc;
+} Decimator;
+
+Decimator *decimatorCreate(int size, float highRate, float lowRate);
+
+void decimatorDelete(Decimator *dec);
+
+typedef void DecimatorFunc(float complex val, void *context);
+
+void decimatorUpdate(Decimator *dec, float complex *data, int dataLen, DecimatorFunc *func, void *context);
+
+
+
+//########################################################################
+//#  B I Q U A D
+//########################################################################
+
+typedef struct
+{
+    float b0;
+    float b1;
+    float b2;
+    float a0;
+    float a1;
+    float a2;
+    float x1;
+    float x2;
+    float y1;
+    float y2;
+    float complex x1c;
+    float complex x2c;
+    float complex y1c;
+    float complex y2c;
+} Biquad;
+
+
+
+void biquadDelete(Biquad *bq);
+
+float biquadUpdate(Biquad *bq, float v);
+
+float complex biquadUpdateC(Biquad *bq, float complex v);
+
+Biquad *biquadLP(float frequency, float sampleRate, float q);
+
+Biquad *biquadHP(float frequency, float sampleRate, float q);
+
+Biquad *biquadBP(float frequency, float sampleRate, float q);
+
+Biquad *biquadBR(float frequency, float sampleRate, float q);
+
+
+
+
 
 
 #endif /* _FILTER_H_ */
