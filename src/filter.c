@@ -185,9 +185,12 @@ static void firLPCoeffs(int size, float *coeffs, float cutoffFreq, float sampleR
 {
     float omega = 2.0 * PI * cutoffFreq / sampleRate;
     int center = (size - 1) / 2;
-    int i = 0;
-    for ( ; i < size ; i++)
-        coeffs[i] = (i == center) ? omega / PI : sin(omega * i) / (PI * i);
+    int idx = 0;
+    for ( ; idx < size ; idx++)
+        {
+        int i = idx - center;
+        coeffs[idx] = (i == 0) ? omega / PI : sin(omega * i) / (PI * i);
+        }
 }
 
 Fir *firLP(int size, float cutoffFreq, float sampleRate, int windowType)
@@ -259,6 +262,7 @@ Decimator *decimatorCreate(int size, float highRate, float lowRate)
     dec->delayIndex = 0;
     dec->ratio = lowRate/highRate;
     dec->acc = 0.0;
+    dec->bufPtr = 0;
     return dec;
 }
 
@@ -272,12 +276,14 @@ void decimatorDelete(Decimator *dec)
 
 void decimatorUpdate(Decimator *dec, float complex *data, int dataLen, DecimatorFunc *func, void *context)
 {
-    int size = dec->size;
-    float *coeffs = dec->coeffs;
+    int   size         = dec->size;
+    float *coeffs      = dec->coeffs;
     float complex *delayLine = dec->delayLine;
-    int delayIndex = dec->delayIndex;
-    float ratio = dec->ratio;
-    float acc = dec->acc;
+    int   delayIndex   = dec->delayIndex;
+    float ratio        = dec->ratio;
+    float acc          = dec->acc;
+    float complex *buf = dec->buf;
+    int   bufPtr       = dec->bufPtr;
     
     float complex *cpx = data;
     while (dataLen--)
@@ -301,12 +307,19 @@ void decimatorUpdate(Decimator *dec, float complex *data, int dataLen, Decimator
                     idx = size - 1;
                 sum += v * (*coeff++);
                 }
-            func(sum, context);
+            //trace("sum:%f", sum * 1000.0);
+            buf[bufPtr++] = sum;
+            if (bufPtr >= DECIMATOR_BUFSIZE)
+                {
+                func(buf, bufPtr, context);
+                bufPtr = 0;
+                }
             }
         delayIndex = (delayIndex + 1) % size;
         }
     dec->delayIndex = delayIndex + 1;
     dec->acc = acc;
+    dec->bufPtr = bufPtr;
 }
 
 

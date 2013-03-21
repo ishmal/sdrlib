@@ -86,7 +86,7 @@ int test_main()
         {
         error("Failure initializing sdrlib");
         }
-    sleep(10);
+    Pa_Sleep(10* 1000);
     if (!sdrStop(sdr))
         {
         error("Failure initializing sdrlib");

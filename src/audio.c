@@ -34,7 +34,41 @@
 #include "private.h"
 
 #define SAMPLE_RATE 44100
-#define FRAMES_PER_BUFFER  64
+
+
+
+static int queuePush(Audio *audio, float v)
+{
+    int head = (audio->head + 1)& 0xfffff;
+    if (head == audio->tail)
+        {
+        //error("Audio queue full");
+        return FALSE;
+        }
+    else
+        {
+        //trace("head:%d tail:%d", head, audio->tail);
+        audio->sendbuf[head] = v;
+        audio->head = head;
+        return TRUE;
+        }
+}
+
+static float queuePop(Audio *audio)
+{
+    int tail = (audio->tail + 1)& 0xfffff;
+    if (audio->head == tail)
+        {
+        //error("Audio queue empty");
+        return 0.0;
+        }
+    else
+        {
+        float v = audio->sendbuf[tail];
+        audio->tail = tail;
+        return v;
+        }
+}
 
 
 static int paCallback(const void *inputBuffer, void *outputBuffer,
@@ -44,7 +78,13 @@ static int paCallback(const void *inputBuffer, void *outputBuffer,
                       void *userData)
 {
     Audio *audio = (Audio *) userData;
-    trace("sampleRate:%f", audio->sampleRate);
+    float *out = (float *)outputBuffer;
+    while (framesPerBuffer--)
+        {
+        float v = queuePop(audio);
+        *out++ = v;
+        *out++ = v;
+        }
     return paContinue;
 }
 
@@ -59,6 +99,7 @@ Audio *audioCreate()
     if (!audio)
         return audio;
     audio->sampleRate = (float)SAMPLE_RATE;
+    audio->head = audio->tail = 0;
 
     int err = Pa_Initialize();
     if ( err != paNoError )
@@ -78,7 +119,7 @@ Audio *audioCreate()
             NULL, /* no input */
             &parms,
             SAMPLE_RATE,
-            FRAMES_PER_BUFFER,
+            paFramesPerBufferUnspecified,
             paClipOff,      /* we won't output out of range samples so don't bother clipping them */
             paCallback,
             (void *)audio );
@@ -101,6 +142,19 @@ Audio *audioCreate()
         }
  
     return audio;
+}
+
+
+/**
+ *
+ */
+int audioPlay(Audio *audio, float *data, int size)
+{
+    while (size--)
+        {
+        queuePush(audio, *data++);
+        }
+    return TRUE;
 }
 
 /**

@@ -29,10 +29,15 @@
 
 #include <portaudio.h>
 
+#define SENDBUF_SIZE (0xfffff + 1)  
+
 typedef struct
 {
     PaStream *stream;
     float sampleRate;
+    float sendbuf[SENDBUF_SIZE];
+    int head;
+    int tail;
 } Audio;
 
 
@@ -42,6 +47,10 @@ typedef struct
  */  
 Audio *audioCreate();
 
+/**
+ * Send audio data to the player
+ */
+int audioPlay(Audio *audio, float *data, int size);
 
 /**
  * Delete an Audio instance, stopping

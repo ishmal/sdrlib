@@ -112,6 +112,8 @@ Fir *firBP(int size, float loCutoffFreq, float hiCutoffFreq, float sampleRate, i
 //########################################################################
 
 
+#define DECIMATOR_BUFSIZE (16384)
+
 typedef struct
 {
     int size;
@@ -120,13 +122,15 @@ typedef struct
     int delayIndex;
     float ratio;
     float acc;
+    float complex buf[DECIMATOR_BUFSIZE];
+    int bufPtr;
 } Decimator;
 
 Decimator *decimatorCreate(int size, float highRate, float lowRate);
 
 void decimatorDelete(Decimator *dec);
 
-typedef void DecimatorFunc(float complex val, void *context);
+typedef void DecimatorFunc(float complex *data, int size, void *context);
 
 void decimatorUpdate(Decimator *dec, float complex *data, int dataLen, DecimatorFunc *func, void *context);
 
