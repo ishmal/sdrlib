@@ -52,5 +52,14 @@ void error(char *format, ...)
 
 
 
-
+void *smalloc(int size)
+{
+    void *mem = malloc(size);
+    if (!mem)
+        {
+        error("smalloc could not allocate %d bytes", size);
+        return NULL;
+        }
+    return mem;
+}
 

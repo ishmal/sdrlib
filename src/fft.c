@@ -45,6 +45,8 @@ Fft *fftCreate(int N)
     fft->plan  = fftw_plan_dft_1d(N, fft->in, fft->out, FFTW_FORWARD, FFTW_ESTIMATE);
     fft->spectrum = (unsigned int *) malloc(N * sizeof(unsigned int));
     fft->inPtr = 0;
+    fft->skipCounter = 0;
+    fft->threshold = N * 5;
     return fft;
 }
 
@@ -66,29 +68,32 @@ void fftDelete(Fft *fft)
 
 
 
-void fftCompute(Fft *fft)
-{
-    fftw_execute(fft->plan);
-}
 
 
 void fftUpdate(Fft *fft, float complex *inbuf, int count, FftOutputFunc *func, void *context)
 {
     float complex *in = inbuf;
-    fftw_complex  *fftwin = fftw->in;
+    fftw_complex  *fftwin = fft->in;
     int N     = fft->N;
     int inPtr = fft->inPtr;
     while (count--)
         {
+        if ((fft->skipCounter++) < fft->threshold)
+            continue;
         fftwin[inPtr++] = *in++;
         if (inPtr >= N)
             {
             inPtr = 0;
             fftw_execute(fft->plan);
             unsigned int *ps = fft->spectrum;
-            /*
-             */
-            func(ps, N, context);
+            fftw_complex *cpx = fft->out;
+            int count = N;
+            while (count--)
+                {
+                *ps++ = (unsigned int)cabs(*cpx++);
+                }
+            func(fft->spectrum, N, context);
+            fft->skipCounter = 0;
             }
         }
     fft->inPtr = inPtr;

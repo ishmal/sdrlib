@@ -43,6 +43,7 @@ void trace(char *format, ...);
 void error(char *format, ...);
 
 
+void *smalloc(int size);
 
 
 #endif /* _PRIVATE_H_ */

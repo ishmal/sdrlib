@@ -23,6 +23,7 @@ vpath %.c src
 SRC = \
 sdrlib.c  \
 audio.c   \
+demod.c   \
 device.c  \
 fft.c     \
 filter.c  \

@@ -33,11 +33,13 @@
 typedef struct
 {
     int N;
-    complex *in;
-    complex *out;
+    fftw_complex *in;
+    fftw_complex *out;
     fftw_plan plan;
     unsigned int *spectrum;
     int inPtr;
+    int skipCounter;
+    int threshold;
 } Fft;
 
 
@@ -59,7 +61,7 @@ void fftDelete(Fft *fft);
 
 typedef void FftOutputFunc(unsigned int *vals, int size, void *context);
 
-void fftCompute(Fft *fft, FftOutputFunc *func, void *context);
+void fftUpdate(Fft *fft, float complex *inbuf, int count, FftOutputFunc *func, void *context);
 
 #endif /* _FFT_H_ */
 
