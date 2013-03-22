@@ -39,7 +39,7 @@
 
 static int queuePush(Audio *audio, float v)
 {
-    int head = (audio->head + 1)& 0xfffff;
+    int head = (audio->head + 1) & 0xfffff;
     if (head == audio->tail)
         {
         //error("Audio queue full");
@@ -56,7 +56,7 @@ static int queuePush(Audio *audio, float v)
 
 static float queuePop(Audio *audio)
 {
-    int tail = (audio->tail + 1)& 0xfffff;
+    int tail = (audio->tail + 1) & 0xfffff;
     if (audio->head == tail)
         {
         //error("Audio queue empty");
@@ -82,6 +82,7 @@ static int paCallback(const void *inputBuffer, void *outputBuffer,
     while (framesPerBuffer--)
         {
         float v = queuePop(audio);
+        //trace("v:%f",v);
         *out++ = v;
         *out++ = v;
         }
@@ -99,7 +100,8 @@ Audio *audioCreate()
     if (!audio)
         return audio;
     audio->sampleRate = (float)SAMPLE_RATE;
-    audio->head = audio->tail = 0;
+    audio->head = 1;
+    audio->tail = 0;
 
     int err = Pa_Initialize();
     if ( err != paNoError )

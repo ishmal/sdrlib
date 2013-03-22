@@ -207,9 +207,12 @@ static void firHPCoeffs(int size, float *coeffs, float cutoffFreq, float sampleR
 {
     float omega = 2.0 * PI * cutoffFreq / sampleRate;
     int center = (size - 1) / 2;
-    int i = 0;
-    for ( ; i < size ; i++)
-        coeffs[i] = (i == center) ? 1.0 - omega / PI : -sin(omega * i) / (PI * i);
+    int idx = 0;
+    for ( ; idx < size ; idx++)
+        {
+        int i = idx - center;
+        coeffs[idx] = (i == center) ? 1.0 - omega / PI : -sin(omega * i) / (PI * i);
+        }
 }
 
 Fir *firHP(int size, float cutoffFreq, float sampleRate, int windowType)
@@ -227,11 +230,14 @@ static void firBPCoeffs(int size, float *coeffs, float loCutoffFreq, float hiCut
     float omega1 = 2.0 * PI * loCutoffFreq / sampleRate;
     float omega2 = 2.0 * PI * hiCutoffFreq / sampleRate;
     int center = (size - 1) / 2;
-    int i = 0;
-    for ( ; i < size ; i++)
-        coeffs[i] = (i == center) ? 
+    int idx = 0;
+    for ( ; idx < size ; idx++)
+        {
+        int i = idx - center;
+        coeffs[idx] = (i == center) ? 
             1.0 - (omega2-omega1) / PI :
             (sin(omega1*i) - sin(omega2 * i)) / (PI * i);
+        }
 }
 
 Fir *firBP(int size, float loCutoffFreq, float hiCutoffFreq, float sampleRate, int windowType)

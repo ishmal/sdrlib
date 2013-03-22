@@ -35,7 +35,7 @@
 #include "device.h"
 #include "filter.h"
 #include "fft.h"
-
+#include "vfo.h"
 
 typedef struct Impl Impl;
 
@@ -49,6 +49,8 @@ struct Impl
     pthread_t thread;
     int keepGoing;
     Fft *fft;
+    Vfo *vfo;
+    Fir *bpf;
     Decimator *decimator;
     Demodulator *demod;
     Demodulator *demodAm;
@@ -76,6 +78,7 @@ int implStart(SdrLib *sdrlib);
 /**
  */   
 int implStop(SdrLib *sdrlib);
+
 
 
 #endif /* _IMPL_H_ */

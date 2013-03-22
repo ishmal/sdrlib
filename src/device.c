@@ -111,6 +111,11 @@ int deviceScan(int type, Device **outbuf, int maxDevices)
     char *deviceDir = getDeviceDir();  
     int dirLen = strlen(deviceDir);
     DIR *dir = opendir(deviceDir);
+    if (!dir)
+        {
+        error("Devices directory '%s' not found", deviceDir);
+        return 0;
+        }
     int count = 0;
     while (count < maxDevices)
         {

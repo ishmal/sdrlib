@@ -7,21 +7,15 @@
 
 
 
-RTL = ../rtlmingw/rtl-sdr
-
-#CC = gcc -arch x86_64
-CC = gcc
+CC = gcc -arch x86_64
 
 
 
-#CFLAGS = -g -O2 -Wall
-CFLAGS = -g -O2 -Wall -mwindows
+CFLAGS = -g -O2 -Wall
 
-#INC = -I. -Isrc
-INC = -I. -Isrc -I$(RTL)/include
+INC = -I. -Isrc
 
-#LDFLAGS = -L. -Lobj -lsdr -lportaudio -lfftw3 -lpthread -lm
-LDFLAGS = -L. -Lobj -lsdr -lportaudio -lfftw3-3 -lpthread -lwinmm -lm
+LDFLAGS = -L. -Lobj -lsdr -lportaudio -lfftw3 -lpthread -lm
 
 vpath %.c src
 
@@ -76,7 +70,7 @@ clean:
 
 
 device/device-rtl.so:  devicesrc/device-rtl.c
-	$(CC) -shared $(CFLAGS) $(INC) $< -o $@ -L$(RTL)/.. -lrtlsdr
+	$(CC) -shared $(CFLAGS) $(INC) $< -o $@ -lrtlsdr
 
 
 

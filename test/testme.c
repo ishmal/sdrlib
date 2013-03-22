@@ -58,8 +58,8 @@ int test_device()
     Device *di = devices[0];
     
     di->setGain(di->ctx, 1.0);
-    di->setSampleRate(di->ctx, 1234567.0);
-    di->setCenterFrequency(di->ctx, 93700000.0);
+    di->setSampleRate(di->ctx, 2048000.0);
+    di->setCenterFrequency(di->ctx, 88700000.0);
     
     trace("Name      : %s", di->name);
     trace("Gain      : %f", di->getGain(di->ctx));
@@ -86,7 +86,7 @@ int test_main()
         {
         error("Failure initializing sdrlib");
         }
-    Pa_Sleep(10* 1000);
+    Pa_Sleep(100* 1000);
     if (!sdrStop(sdr))
         {
         error("Failure initializing sdrlib");

@@ -29,7 +29,9 @@
 #include "audio.h"
 #include "demod.h"
 #include "device.h"
+#include "filter.h"
 #include "private.h"
+#include "vfo.h"
 
 
 static void *implReaderThread(void *ctx);
@@ -49,6 +51,8 @@ int implCreate(SdrLib *lib)
         //but dont fail. wait until start()
         }
     impl->fft = fftCreate(16384);
+    impl->vfo = vfoCreate(0.0, 2048000.0);
+    impl->bpf = firBP(11, -50000.0, 50000.0, 2048000.0, W_HAMMING);
     impl->decimator = decimatorCreate(11, 2048000.0, 44100.0);
     impl->demodFm = demodFmCreate();
     impl->demodAm = demodAmCreate();
@@ -71,6 +75,8 @@ int implClose(SdrLib *lib)
         d->delete(d->ctx);
         }
     fftDelete(impl->fft);
+    vfoDelete(impl->vfo);
+    firDelete(impl->bpf);
     decimatorDelete(impl->decimator);
     demodDelete(impl->demodFm);
     demodDelete(impl->demodAm);
@@ -100,6 +106,8 @@ int implStart(SdrLib *lib)
         return FALSE;
         }
     impl->device = d;
+    d->setGain(d->ctx, 1.0);
+    d->setCenterFrequency(d->ctx, 88700000.0);
     impl->keepGoing = 1;
     int rc = pthread_create(&thread, NULL, implReaderThread, (void *)impl);
     if (rc)
