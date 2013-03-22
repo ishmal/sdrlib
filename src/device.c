@@ -28,20 +28,57 @@
 #include <string.h>
 #include <stdlib.h>
 #include <dirent.h>
-#include <dlfcn.h>
 #include <limits.h>
 
 #include "device.h"
 #include "private.h"
 
+
 static Parent parent;
+
+#ifdef __WIN32__
+#include <windows.h>
+#define SEPCHR ('\\')
+#define SEPSTR ("\\")
+static char _prognamebuf[MAX_PATH];
+static char *getprogname()
+{
+    GetModuleFileName(NULL, _prognamebuf, MAX_PATH-1);
+    return _prognamebuf;
+}
+
+static int realpath(char *fname, char *fullpath)
+{
+    return GetFullPathName(fname, MAX_PATH-1, fullpath, NULL);
+}
+
+static void *dload(char *fname)
+{
+    return (void *)LoadLibrary(fname);
+}
+
+static void *dlsym(void *lib, char *funcname)
+{
+    return (void *)GetProcAddress(lib, funcname);
+}
+#else
+#include <dlfcn.h>
+#define SEPCHR ('/')
+#define SEPSTR ("/")
+static void *dload(char *fname)
+{
+    return (void *)dlopen(fname, RTLD_LAZY);
+}
+
+#endif
+
 
 static char *getExecutableDir()
 {
     char pathName[PATH_MAX+1];
     if (!realpath(getprogname(), pathName))
         return strdup(".");
-    char *pos = strrchr(pathName, '/');
+    char *pos = strrchr(pathName, SEPCHR);
     //trace("Program name is %s", pathName);
     if (!pos)
         return strdup(".");
@@ -59,7 +96,8 @@ static char *getDeviceDir()
     int len = strlen(dir) + 8;
     char *deviceDir = (char *) malloc(len);
     strcpy(deviceDir, dir);
-    strcat(deviceDir, "/device");
+    strcat(deviceDir, SEPSTR);
+    strcat(deviceDir, "device");
     //trace("Device dir is %s", deviceDir);
     free(dir);
     return deviceDir;
@@ -79,18 +117,16 @@ int deviceScan(int type, Device **outbuf, int maxDevices)
         struct dirent *de = readdir(dir);
         if (!de)
             break;
-        if (de->d_type != DT_REG)
-            continue;
         char *name = de->d_name;
         trace("name: '%s'", name);
         int fullLen = dirLen + 1 + strlen(name) + 1;
         char *fullName = (char *)malloc(fullLen);
         strcpy(fullName, deviceDir);
-        strcat(fullName, "/");
+        strcat(fullName, SEPSTR);
         strcat(fullName, name);
         trace("full name: '%s'", fullName);
         
-        void *dlib = dlopen(fullName, RTLD_LAZY);
+        void *dlib = dload(fullName);
         if (dlib)
             {
             trace("got dynamic lib");
@@ -123,7 +159,6 @@ int deviceScan(int type, Device **outbuf, int maxDevices)
     
     free(deviceDir);
     return count;
-    
 }
 
 
