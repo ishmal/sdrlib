@@ -1,0 +1,27 @@
+if(NOT PORTAUDIO_FOUND)
+  pkg_check_modules (PORTAUDIO_PKG portaudio)
+  find_path(PORTAUDIO_INCLUDE_DIR NAMES portaudio.h
+    PATHS
+    ${PORTAUDIO_PKG_INCLUDE_DIRS}
+    /usr/include
+    /usr/local/include
+  )
+
+  find_library(PORTAUDIO_LIBRARIES NAMES portaudio
+    PATHS
+    ${PORTAUDIO_PKG_LIBRARY_DIRS}
+    /usr/lib
+    /usr/local/lib
+  )
+
+if(PORTAUDIO_INCLUDE_DIR AND PORTAUDIO_LIBRARIES)
+  set(PORTAUDIO_FOUND TRUE CACHE INTERNAL "PortAudio found")
+  message(STATUS "Found PortAudio: ${PORTAUDIO_INCLUDE_DIR}, ${PORTAUDIO_LIBRARIES}")
+else(PORTAUDIO_INCLUDE_DIR AND PORTAUDIO_LIBRARIES)
+  set(PORTAUDIO_FOUND FALSE CACHE INTERNAL "PortAudio found")
+  message(STATUS "PortAudio not found.")
+endif(PORTAUDIO_INCLUDE_DIR AND PORTAUDIO_LIBRARIES)
+
+mark_as_advanced(PORTAUDIO_INCLUDE_DIR PORTAUDIO_LIBRARIES)
+
+endif(NOT PORTAUDIO_FOUND)
