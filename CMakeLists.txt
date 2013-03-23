@@ -2,7 +2,6 @@
 # Project setup
 ########################################################################
 cmake_minimum_required(VERSION 2.8)
-set(CMAKE_C_COMPILER "gcc")
 project(sdrlib C)
 
 #select the debug build type by default to get optimization flags
@@ -23,6 +22,15 @@ list(APPEND CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/cmake/Modules)
 ########################################################################
 # Find build dependencies
 ########################################################################
+if(WIN32)
+
+message(STATUS "Using provided libraries for win32")
+include_directories("${PROJECT_SOURCE_DIR}/win32")
+link_directories("${PROJECT_SOURCE_DIR}/win32")
+
+else(WIN32)
+
+
 find_package(PkgConfig)
 find_package(fftw3)
 find_package(PortAudio)
@@ -32,13 +40,15 @@ find_package(Threads)
 
 if(NOT FFTW3_FOUND)
     message(FATAL_ERROR "fftw required to compile SdrLib")
-endif()
+endif(NOT FFTW3_FOUND)
 if(NOT LIBRTLSDR_FOUND)
     message(FATAL_ERROR "librtlsdr required to compile SdrLib")
-endif()
+endif(NOT LIBRTLSDR_FOUND)
 if(NOT THREADS_FOUND)
     message(FATAL_ERROR "pthreads(-win32) required to compile SdrLib")
-endif()
+endif(NOT THREADS_FOUND)
+
+endif(WIN32)
 ########################################################################
 # Setup the include and linker paths
 ########################################################################

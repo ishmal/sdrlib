@@ -36,7 +36,7 @@
 
 static Parent parent;
 
-#ifdef __WIN32__
+#ifdef WIN32
 #include <windows.h>
 #define SEPCHR ('\\')
 #define SEPSTR ("\\")
