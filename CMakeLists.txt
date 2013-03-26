@@ -2,7 +2,7 @@
 # Project setup
 ########################################################################
 cmake_minimum_required(VERSION 2.8)
-project(sdrlib C)
+project(sdrlib)
 
 #select the debug build type by default to get optimization flags
 if(NOT CMAKE_BUILD_TYPE)
@@ -73,3 +73,4 @@ set(INCLUDE_DIRS ${CMAKE_CURRENT_SOURCE_DIR}/include CACHE INTERNAL "" FORCE)
 add_subdirectory(src)
 add_subdirectory(device)
 add_subdirectory(test)
+add_subdirectory(qt)
