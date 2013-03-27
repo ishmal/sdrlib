@@ -65,9 +65,8 @@ int implCreate(SdrLib *lib)
 
 /**
  */   
-int implClose(SdrLib *lib)
+int implDelete(Impl *impl)
 {
-    Impl *impl = (Impl *)lib->impl;
     int i=0;
     for (; i < impl->deviceCount ; i++)
         {
@@ -81,7 +80,6 @@ int implClose(SdrLib *lib)
     demodDelete(impl->demodFm);
     demodDelete(impl->demodAm);
     free(impl);
-    lib->impl = NULL;
     return TRUE;
 }
 
@@ -90,9 +88,8 @@ int implClose(SdrLib *lib)
 
 /**
  */   
-int implStart(SdrLib *lib)
+int implStart(Impl *impl)
 {
-    Impl *impl = (Impl *)lib->impl;
     pthread_t thread;
     if (!impl->deviceCount)
         {
@@ -121,15 +118,61 @@ int implStart(SdrLib *lib)
 
 /**
  */   
-int implStop(SdrLib *lib)
+int implStop(Impl *impl)
 {
-    Impl *impl = (Impl *)lib->impl;
-    impl->device->close(impl->device->ctx);
     impl->keepGoing = 0;
     void *status;
     pthread_join(impl->thread, &status);
+    impl->device->close(impl->device->ctx);
+    impl->device = NULL;
     return TRUE;
 }
+
+/**
+ */   
+double implGetCenterFrequency(Impl *impl)
+{
+    Device *d = impl->device;
+    return (d) ? d->getCenterFrequency(d->ctx) : 0.0;
+}
+
+
+/**
+ */   
+int implSetCenterFrequency(Impl *impl, double freq)
+{
+    Device *d = impl->device;
+    return (d) ? d->setCenterFrequency(d->ctx, freq) : 0;
+}
+
+
+
+/**
+ */   
+float implGetGain(Impl *impl)
+{
+    Device *d = impl->device;
+    return (d) ? d->getGain(d->ctx) : 0.0;
+}
+
+
+
+/**
+ */   
+int implSetGain(Impl *impl, float gain)
+{
+    Device *d = impl->device;
+    return (d) ? d->setGain(d->ctx, gain) : 0;
+}
+
+
+
+
+
+
+
+
+
 
 
 #define READSIZE (8 * 16384)
@@ -138,6 +181,10 @@ static void fftOutput(unsigned int *vals, int size, void *ctx)
 {
     Impl *impl = (Impl *)ctx;
     trace("got power spectrum size:%d", size);
+    PowerSpectrumFunc *psFunc = impl->psFunc;
+    void *psFuncCtx = impl->psFuncCtx;
+    trace("ctx:%p", psFuncCtx);
+    if (psFunc) (*psFunc)(vals, size, psFuncCtx);
 }
 
 static void demodOutput(float *buf, int size, void *ctx)
@@ -163,7 +210,7 @@ static void *implReaderThread(void *ctx)
     while (impl->keepGoing)
         {
         int count = dev->read(dev->ctx, readbuf, READSIZE);
-        trace("read: %d", count);
+        //trace("read: %d", count);
         fftUpdate(impl->fft, readbuf, count, fftOutput, impl);
         decimatorUpdate(impl->decimator, readbuf, count, decimatorOutput, impl);
         }

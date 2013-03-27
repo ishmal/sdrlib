@@ -51,15 +51,15 @@ SdrLib *sdrCreate();
 /**
  * Delete an SdrLib instance, stopping
  * any processing and freeing any resources.
- * @param sdrlib and SDRLib instance.
+ * @param sdrlib an SDRLib instance.
  */   
-int sdrClose(SdrLib *sdrlib);
+int sdrDelete(SdrLib *sdrlib);
 
 
 
 /**
  * Start sdrlib processing
- * @param sdrlib and SDRLib instance.
+ * @param sdrlib an SDRLib instance.
  */   
 int sdrStart(SdrLib *sdrlib);
 
@@ -67,11 +67,42 @@ int sdrStart(SdrLib *sdrlib);
 
 /**
  * Stop sdrlib processing
- * @param sdrlib and SDRLib instance.
+ * @param sdrlib an SDRLib instance.
  */   
 int sdrStop(SdrLib *sdrlib);
 
+/**
+ * Get the current center frequency
+ * @param sdrlib an SDRLib instance.
+ */   
+double sdrGetCenterFrequency(SdrLib *sdrlib);
 
+
+
+/**
+ * Stop sdrlib processing
+ * @param sdrlib an SDRLib instance.
+ */   
+int sdrSetCenterFrequency(SdrLib *sdrlib, double freq);
+
+/**
+ * Start sdrlib processing
+ * @param sdrlib an SDRLib instance.
+ */   
+float sdrGetGain(SdrLib *sdrlib);
+
+
+
+/**
+ * Stop sdrlib processing
+ * @param sdrlib an SDRLib instance.
+ */   
+int sdrSetGain(SdrLib *sdrlib, float gain);
+
+
+typedef void PowerSpectrumFunc(unsigned int *ps, int size, void *ctx);
+
+void sdrSetPowerSpectrumFunc(SdrLib *sdrlib, PowerSpectrumFunc *func, void *ctx);
 
 
 #ifdef __cplusplus

@@ -1,5 +1,5 @@
 /**
- * Audio I/O definitions and implementations.
+ * Placeholder for writing and executing some tests
  * 
  * Authors:
  *   Bob Jamison
@@ -91,7 +91,7 @@ int test_main()
         {
         error("Failure initializing sdrlib");
         }
-    if (!sdrClose(sdr))
+    if (!sdrDelete(sdr))
         {
         error("Failure initializing sdrlib");
         }

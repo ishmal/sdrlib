@@ -37,8 +37,6 @@
 #include "impl.h"
 
 /**
- * Create a new SdrLib instance.
- * @return a new SdrLib instance
  */  
 SdrLib *sdrCreate()
 {
@@ -54,13 +52,10 @@ SdrLib *sdrCreate()
 }
 
 /**
- * Delete an SdrLib instance, stopping
- * any processing and freeing any resources.
- * @param sdrlib and SDRLib instance.
  */   
-int sdrClose(SdrLib *sdrlib)
+int sdrDelete(SdrLib *sdrlib)
 {
-    int ret = implClose(sdrlib);
+    int ret = implDelete((Impl *)sdrlib->impl);
     free(sdrlib);
     return ret;
 }
@@ -68,20 +63,56 @@ int sdrClose(SdrLib *sdrlib)
 
 
 /**
- * Start sdrlib processing
- * @param sdrlib and SDRLib instance.
  */   
 int sdrStart(SdrLib *sdrlib)
 {
-    return implStart(sdrlib);
+    return implStart((Impl *)sdrlib->impl);
 }
 
 
 /**
- * Stop sdrlib processing
- * @param sdrlib and SDRLib instance.
  */   
 int sdrStop(SdrLib *sdrlib)
 {
-    return implStop(sdrlib);
+    return implStop((Impl *)sdrlib->impl);
 }
+
+/**
+ */   
+double sdrGetCenterFrequency(SdrLib *sdrlib)
+{
+    return implGetCenterFrequency((Impl *)sdrlib->impl);
+}
+
+
+/**
+ */   
+int sdrSetCenterFrequency(SdrLib *sdrlib, double freq)
+{
+    return implSetCenterFrequency((Impl *)sdrlib->impl, freq);
+}
+
+/**
+ */   
+float sdrGetGain(SdrLib *sdrlib)
+{
+    return implGetGain((Impl *)sdrlib->impl);
+}
+
+
+/**
+ */   
+int sdrSetGain(SdrLib *sdrlib, float gain)
+{
+    return implSetGain((Impl *)sdrlib->impl, gain);
+}
+
+void sdrSetPowerSpectrumFunc(SdrLib *sdrlib, PowerSpectrumFunc *func, void *ctx)
+{
+    Impl *impl = (Impl *)sdrlib->impl;
+    impl->psFunc = func;
+    trace("ctx in:%p", ctx);
+    impl->psFuncCtx = ctx;
+}
+
+

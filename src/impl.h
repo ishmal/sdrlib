@@ -49,6 +49,8 @@ struct Impl
     pthread_t thread;
     int keepGoing;
     Fft *fft;
+    PowerSpectrumFunc *psFunc;
+    void *psFuncCtx; 
     Vfo *vfo;
     Fir *bpf;
     Decimator *decimator;
@@ -61,23 +63,43 @@ struct Impl
 
 /**
  */  
-int implCreate(SdrLib *lib);
+int implCreate(SdrLib *sdr);
 
 
 /**
  */   
-int implClose(SdrLib *sdrlib);
+int implDelete(Impl *impl);
 
 
 
 /**
  */   
-int implStart(SdrLib *sdrlib);
+int implStart(Impl *impl);
 
 
 /**
  */   
-int implStop(SdrLib *sdrlib);
+int implStop(Impl *impl);
+
+
+/**
+ */   
+double implGetCenterFrequency(Impl *impl);
+
+
+/**
+ */   
+int implSetCenterFrequency(Impl *impl, double freq);
+
+
+/**
+ */   
+float implGetGain(Impl *impl);
+
+
+/**
+ */   
+int implSetGain(Impl *impl, float gain);
 
 
 
