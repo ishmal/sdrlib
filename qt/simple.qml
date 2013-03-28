@@ -7,20 +7,23 @@ Rectangle {
     property color onHoverColor: "gold"
     property color borderColor: "white"
 
-    width: 360
-    height: 360
-    Text {
-        anchors.centerIn: parent
-        text: "Hello World"
-    }
+    width: 400
+    height: 300
+
     Waterfall {
+        x: 0
+        y: 0
+        width: 400
+        height: 250
         objectName: "waterfall"
+        #color: Color.create ("#262626")
     }
     Rectangle {
         x: 0
-        y: 0
+        y: 260
         width: 60
         height: 20
+        color: buttonColor
         Text {
             anchors.centerIn: parent
             text: "Start"
@@ -35,7 +38,7 @@ Rectangle {
     }
     Rectangle {
         x: 100
-        y: 0
+        y: 260
         width: 60
         height: 20
         Text {

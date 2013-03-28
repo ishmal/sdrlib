@@ -6,32 +6,25 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>957</width>
-    <height>365</height>
+    <width>938</width>
+    <height>285</height>
    </rect>
   </property>
   <property name="windowTitle">
    <string>MainWindow</string>
   </property>
   <widget class="QWidget" name="centralwidget">
-   <widget class="QGraphicsView" name="graphicsView">
+   <widget class="QDoubleSpinBox" name="freqOffsetBox">
     <property name="geometry">
      <rect>
-      <x>-5</x>
-      <y>1</y>
-      <width>961</width>
-      <height>171</height>
-     </rect>
-    </property>
-   </widget>
-   <widget class="QDoubleSpinBox" name="centerFreqBox">
-    <property name="geometry">
-     <rect>
-      <x>350</x>
+      <x>300</x>
       <y>220</y>
       <width>261</width>
       <height>24</height>
      </rect>
+    </property>
+    <property name="toolTip">
+     <string>Adjusts what to add to displayed frequency</string>
     </property>
     <property name="maximum">
      <double>300000000.000000000000000</double>
@@ -40,17 +33,61 @@
      <double>100000000.000000000000000</double>
     </property>
    </widget>
-   <widget class="QSlider" name="verticalSlider">
+   <widget class="QWidget" name="verticalLayoutWidget">
     <property name="geometry">
      <rect>
-      <x>920</x>
-      <y>180</y>
-      <width>22</width>
-      <height>121</height>
+      <x>0</x>
+      <y>-1</y>
+      <width>961</width>
+      <height>161</height>
+     </rect>
+    </property>
+    <layout class="QVBoxLayout" name="waterfallBox"/>
+   </widget>
+   <widget class="QPushButton" name="startStopBtn">
+    <property name="geometry">
+     <rect>
+      <x>0</x>
+      <y>170</y>
+      <width>61</width>
+      <height>32</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>Play</string>
+    </property>
+    <property name="checkable">
+     <bool>true</bool>
+    </property>
+    <property name="checked">
+     <bool>false</bool>
+    </property>
+    <property name="autoDefault">
+     <bool>false</bool>
+    </property>
+   </widget>
+   <widget class="QWidget" name="verticalLayoutWidget_2">
+    <property name="geometry">
+     <rect>
+      <x>200</x>
+      <y>170</y>
+      <width>471</width>
+      <height>41</height>
+     </rect>
+    </property>
+    <layout class="QVBoxLayout" name="freqDialBox"/>
+   </widget>
+   <widget class="QSlider" name="audioGainSlider">
+    <property name="geometry">
+     <rect>
+      <x>760</x>
+      <y>220</y>
+      <width>160</width>
+      <height>22</height>
      </rect>
     </property>
     <property name="orientation">
-     <enum>Qt::Vertical</enum>
+     <enum>Qt::Horizontal</enum>
     </property>
    </widget>
   </widget>
@@ -59,7 +96,7 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>957</width>
+     <width>938</width>
      <height>22</height>
     </rect>
    </property>
@@ -115,5 +152,59 @@
   </action>
  </widget>
  <resources/>
- <connections/>
+ <connections>
+  <connection>
+   <sender>startStopBtn</sender>
+   <signal>clicked()</signal>
+   <receiver>MainWindow</receiver>
+   <slot>startStop()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>53</x>
+     <y>192</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>114</x>
+     <y>224</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>freqOffsetBox</sender>
+   <signal>valueChanged(double)</signal>
+   <receiver>MainWindow</receiver>
+   <slot>adjustFreqOffset(double)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>481</x>
+     <y>256</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>449</x>
+     <y>269</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>audioGainSlider</sender>
+   <signal>valueChanged(int)</signal>
+   <receiver>MainWindow</receiver>
+   <slot>adjustGain(int)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>827</x>
+     <y>252</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>721</x>
+     <y>256</y>
+    </hint>
+   </hints>
+  </connection>
+ </connections>
+ <slots>
+  <slot>startStop()</slot>
+  <slot>adjustGain(int)</slot>
+  <slot>adjustFreqOffset(double)</slot>
+ </slots>
 </ui>
