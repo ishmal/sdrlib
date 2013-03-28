@@ -180,10 +180,8 @@ int implSetGain(Impl *impl, float gain)
 static void fftOutput(unsigned int *vals, int size, void *ctx)
 {
     Impl *impl = (Impl *)ctx;
-    trace("got power spectrum size:%d", size);
     PowerSpectrumFunc *psFunc = impl->psFunc;
     void *psFuncCtx = impl->psFuncCtx;
-    trace("ctx:%p", psFuncCtx);
     if (psFunc) (*psFunc)(vals, size, psFuncCtx);
 }
 
@@ -207,7 +205,7 @@ static void *implReaderThread(void *ctx)
     
     float complex *readbuf = (float complex *) malloc(READSIZE * sizeof(float complex));
     
-    while (impl->keepGoing)
+    while (impl->keepGoing && dev->isOpen(dev->ctx))
         {
         int count = dev->read(dev->ctx, readbuf, READSIZE);
         //trace("read: %d", count);

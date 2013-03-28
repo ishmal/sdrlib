@@ -111,7 +111,6 @@ void sdrSetPowerSpectrumFunc(SdrLib *sdrlib, PowerSpectrumFunc *func, void *ctx)
 {
     Impl *impl = (Impl *)sdrlib->impl;
     impl->psFunc = func;
-    trace("ctx in:%p", ctx);
     impl->psFuncCtx = ctx;
 }
 

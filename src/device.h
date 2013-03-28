@@ -65,6 +65,11 @@ struct Device
     int (*open)(void *ctx);
 
     /**
+     * Test if this device is open
+     */
+    int (*isOpen)(void *ctx);
+
+    /**
      * If this is the open device, then it should be closed when done
      */
     int (*close)(void *ctx);
