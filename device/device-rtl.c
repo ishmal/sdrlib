@@ -40,6 +40,7 @@ typedef struct
     float gainscale;
     unsigned char readbuf[BUFSIZE];
     Parent *par;
+    int isOpen;
 } Context;
 
 
@@ -80,6 +81,8 @@ static int setSampleRate(void *context, float rate)
 static float getSampleRate(void *context)
 {
     Context *ctx = (Context *)context;
+    if (!ctx->isOpen)
+        return 0.0;
     return (float) rtlsdr_get_sample_rate(ctx->dev);
 }
 
@@ -105,6 +108,8 @@ static double getCenterFrequency(void *context)
 static int read(void *context, float complex *cbuf, int buflen)
 {
     Context *ctx = (Context *)context;
+    if (!ctx->isOpen)
+        return 0;
     unsigned char *bbuf = ctx->readbuf;
     float complex *lut = ctx->lut;
     int count;
@@ -143,6 +148,8 @@ static int transmit(void *context, int truefalse)
 static int open(void *context)
 {
     Context *ctx = (Context *)context;
+    if (ctx->isOpen)
+        return 0;
     rtlsdr_dev_t *dev = NULL;
     int devCount = rtlsdr_get_device_count();
     ctx->par->trace("devices:%d", devCount);
@@ -168,13 +175,22 @@ static int open(void *context)
     setCenterFrequency(ctx, 93700000.0);
     
     ret = rtlsdr_reset_buffer(dev);
+    ctx->isOpen = 1;
     return 1;
 }
+
+static int isOpen(void *context)
+{
+    Context *ctx = (Context *)context;
+    return ctx->isOpen;
+}
+    
 
 static int close(void *context)
 {
     Context *ctx = (Context *)context;
     //do shutdowny things here
+    ctx->isOpen = 0;
     rtlsdr_close(ctx->dev);
     return 1;
 }
@@ -212,6 +228,7 @@ int deviceCreate(Device *dv, Parent *parent)
     dv->name               = "RTL - SDR Device";
     dv->ctx                = (void *)ctx;
     dv->open               = open;
+    dv->isOpen             = isOpen;
     dv->close              = close;
     dv->delete             = delete;
     dv->setGain            = setGain;
