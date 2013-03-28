@@ -448,6 +448,26 @@ public slots:
         status("offset:%f", freqOffset);
         }
 
+    void modeAm(bool val)
+        {
+        status("am:%d", val);
+        }
+
+    void modeFm(bool val)
+        {
+        status("fm:%d", val);
+        }
+
+    void modeLsb(bool val)
+        {
+        status("lsb:%d", val);
+        }
+
+    void modeUsb(bool val)
+        {
+        status("usb:%d", val);
+        }
+
 
 private:
 

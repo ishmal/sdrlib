@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>938</width>
-    <height>285</height>
+    <width>932</width>
+    <height>305</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -80,8 +80,8 @@
    <widget class="QSlider" name="audioGainSlider">
     <property name="geometry">
      <rect>
-      <x>760</x>
-      <y>220</y>
+      <x>740</x>
+      <y>230</y>
       <width>160</width>
       <height>22</height>
      </rect>
@@ -90,22 +90,81 @@
      <enum>Qt::Horizontal</enum>
     </property>
    </widget>
+   <widget class="QGroupBox" name="demodBox">
+    <property name="geometry">
+     <rect>
+      <x>710</x>
+      <y>160</y>
+      <width>211</width>
+      <height>61</height>
+     </rect>
+    </property>
+    <property name="title">
+     <string>Mode</string>
+    </property>
+    <widget class="QRadioButton" name="amButton">
+     <property name="geometry">
+      <rect>
+       <x>10</x>
+       <y>30</y>
+       <width>51</width>
+       <height>20</height>
+      </rect>
+     </property>
+     <property name="text">
+      <string>AM</string>
+     </property>
+    </widget>
+    <widget class="QRadioButton" name="fmButton">
+     <property name="geometry">
+      <rect>
+       <x>60</x>
+       <y>30</y>
+       <width>51</width>
+       <height>20</height>
+      </rect>
+     </property>
+     <property name="text">
+      <string>FM</string>
+     </property>
+    </widget>
+    <widget class="QRadioButton" name="lsbButton">
+     <property name="geometry">
+      <rect>
+       <x>110</x>
+       <y>30</y>
+       <width>51</width>
+       <height>20</height>
+      </rect>
+     </property>
+     <property name="text">
+      <string>LSB</string>
+     </property>
+    </widget>
+    <widget class="QRadioButton" name="usbButton">
+     <property name="geometry">
+      <rect>
+       <x>160</x>
+       <y>30</y>
+       <width>51</width>
+       <height>20</height>
+      </rect>
+     </property>
+     <property name="text">
+      <string>USB</string>
+     </property>
+    </widget>
+   </widget>
   </widget>
   <widget class="QMenuBar" name="menubar">
    <property name="geometry">
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>938</width>
+     <width>932</width>
      <height>22</height>
     </rect>
    </property>
-   <widget class="QMenu" name="menuFile">
-    <property name="title">
-     <string>File</string>
-    </property>
-    <addaction name="actionQuit"/>
-   </widget>
    <widget class="QMenu" name="menuDevice">
     <property name="title">
      <string>Device</string>
@@ -120,7 +179,6 @@
     <addaction name="actionUSB"/>
     <addaction name="actionLSB"/>
    </widget>
-   <addaction name="menuFile"/>
    <addaction name="menuDevice"/>
    <addaction name="menuMode"/>
   </widget>
@@ -196,8 +254,72 @@
      <y>252</y>
     </hint>
     <hint type="destinationlabel">
-     <x>721</x>
-     <y>256</y>
+     <x>883</x>
+     <y>278</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>amButton</sender>
+   <signal>clicked(bool)</signal>
+   <receiver>MainWindow</receiver>
+   <slot>modeAm(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>737</x>
+     <y>225</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>598</x>
+     <y>243</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>fmButton</sender>
+   <signal>clicked(bool)</signal>
+   <receiver>MainWindow</receiver>
+   <slot>modeFm(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>795</x>
+     <y>223</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>624</x>
+     <y>250</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>lsbButton</sender>
+   <signal>clicked(bool)</signal>
+   <receiver>MainWindow</receiver>
+   <slot>modeLsb(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>857</x>
+     <y>223</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>651</x>
+     <y>255</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>usbButton</sender>
+   <signal>clicked(bool)</signal>
+   <receiver>MainWindow</receiver>
+   <slot>modeUsb(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>892</x>
+     <y>227</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>681</x>
+     <y>261</y>
     </hint>
    </hints>
   </connection>
@@ -206,5 +328,9 @@
   <slot>startStop()</slot>
   <slot>adjustGain(int)</slot>
   <slot>adjustFreqOffset(double)</slot>
+  <slot>modeAm(bool)</slot>
+  <slot>modeFm(bool)</slot>
+  <slot>modeLsb(bool)</slot>
+  <slot>modeUsb(bool)</slot>
  </slots>
 </ui>
