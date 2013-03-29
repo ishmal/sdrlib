@@ -27,9 +27,18 @@
 #include <stdlib.h>
 #include <string.h>
 #include <complex.h>
+#include <pthread.h>
 #include <rtl-sdr.h>
 
 #include "device.h"
+
+#ifndef TRUE
+#define TRUE  1
+#endif
+
+#ifndef FALSE
+#define FALSE 0
+#endif
 
 #define BUFSIZE 1024*1024
 
@@ -39,11 +48,47 @@ typedef struct
     float complex lut[256 * 256 * sizeof(float complex)];
     float gainscale;
     unsigned char readbuf[BUFSIZE];
+    float complex queue[BUFSIZE];
+    int head, tail;
     Parent *par;
     int isOpen;
 } Context;
 
 
+
+
+static int queuePush(Context *ctx, float complex v)
+{
+    int head = (ctx->head + 1) & 0xfffff;
+    if (head == ctx->tail)
+        {
+        //error("RTL queue full");
+        return FALSE;
+        }
+    else
+        {
+        //trace("head:%d tail:%d", head, ctx->tail);
+        ctx->queue[head] = v;
+        ctx->head = head;
+        return TRUE;
+        }
+}
+
+static int queuePop(Context *ctx, float complex *v)
+{
+    int tail = (ctx->tail + 1) & 0xfffff;
+    if (ctx->head == tail)
+        {
+        //error("RTL queue empty");
+        return FALSE;
+        }
+    else
+        {
+        *v = ctx->queue[tail];
+        ctx->tail = tail;
+        return TRUE;
+        }
+}
 
 
 
@@ -52,6 +97,7 @@ static int setGain(void *context, float gain)
     Context *ctx = (Context *)context;
     //the int param for rtl gain is tenths of a dB
     int dgain = (int)(gain * ctx->gainscale);
+    printf("dgain:%d\n", dgain);
     int ret = rtlsdr_set_tuner_gain(ctx->dev, dgain);
     if (ret)
         {
@@ -105,6 +151,25 @@ static double getCenterFrequency(void *context)
 }
 
 
+
+static int read(void *context, float complex *cbuf, int buflen)
+{
+    Context *ctx = (Context *)context;
+    if (!ctx->isOpen)
+        return 0;
+    float complex v;
+    int count = 0;
+    for ( ; count < buflen ; count++)
+        {
+        if (!queuePop(ctx, &v))
+            break;
+        *cbuf++ = v;
+        }
+    return count;
+}
+
+
+/*
 static int read(void *context, float complex *cbuf, int buflen)
 {
     Context *ctx = (Context *)context;
@@ -132,6 +197,24 @@ static int read(void *context, float complex *cbuf, int buflen)
         }
     return nrCpx;
 }
+*/
+
+
+static void async_read_callback(unsigned char *buf, uint32_t len, void *context)
+{
+    Context *ctx = (Context *)context;
+    float complex *lut = ctx->lut;
+    unsigned char *b = buf;
+    int i = len >> 1;
+    while (i--)
+        {
+        int hi = (int)*b++;
+        int lo = (int)*b++;
+        float complex v = lut[(hi<<8) + lo];
+        queuePush(ctx, v);
+        }
+    //ctx->par->trace("len:%d", len);
+}
 
 static int write(void *context, float complex *cbuf, int datalen)
 {
@@ -143,6 +226,12 @@ static int transmit(void *context, int truefalse)
 {
     //Context *ctx = (Context *)context;
     return 0;
+}
+
+static int asyncLoop(void *context)
+{
+    Context *ctx = (Context *)context;
+    rtlsdr_read_async(ctx->dev, async_read_callback, ctx, 0, 0);
 }
 
 static int open(void *context)
@@ -176,6 +265,16 @@ static int open(void *context)
     
     ret = rtlsdr_reset_buffer(dev);
     ctx->isOpen = 1;
+    ctx->head = 1;
+    ctx->tail = 0;
+    pthread_t thread;
+    int rc = pthread_create(&thread, NULL, asyncLoop, ctx);
+    if (rc)
+        {
+        ctx->par->error("ERROR; return code from pthread_create() is %d", rc);
+        return FALSE;
+        }
+    ctx->par->trace("started");
     return 1;
 }
 
@@ -191,6 +290,7 @@ static int close(void *context)
     Context *ctx = (Context *)context;
     //do shutdowny things here
     ctx->isOpen = 0;
+    rtlsdr_cancel_async(ctx->dev);
     rtlsdr_close(ctx->dev);
     return 1;
 }

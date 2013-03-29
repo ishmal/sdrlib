@@ -11,7 +11,7 @@
    </rect>
   </property>
   <property name="windowTitle">
-   <string>MainWindow</string>
+   <string>Sdr Player</string>
   </property>
   <widget class="QWidget" name="centralwidget">
    <widget class="QDoubleSpinBox" name="freqOffsetBox">
@@ -37,8 +37,8 @@
     <property name="geometry">
      <rect>
       <x>0</x>
-      <y>-1</y>
-      <width>961</width>
+      <y>0</y>
+      <width>931</width>
       <height>161</height>
      </rect>
     </property>
@@ -170,17 +170,7 @@
      <string>Device</string>
     </property>
    </widget>
-   <widget class="QMenu" name="menuMode">
-    <property name="title">
-     <string>Mode</string>
-    </property>
-    <addaction name="actionFM"/>
-    <addaction name="actionAM"/>
-    <addaction name="actionUSB"/>
-    <addaction name="actionLSB"/>
-   </widget>
    <addaction name="menuDevice"/>
-   <addaction name="menuMode"/>
   </widget>
   <widget class="QStatusBar" name="statusbar"/>
   <action name="actionFM">

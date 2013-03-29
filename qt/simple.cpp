@@ -26,6 +26,7 @@
 #include <QtWidgets>
 #include <QPainter>
 #include <QImage>
+#include <QPixmap>
 #include <QColor>
 #include <QPaintEvent>
 #include <QResizeEvent>
@@ -55,7 +56,7 @@ public:
         resize(400, 300);
         image = QImage(width(), height(), QImage::Format_RGB32);
         for (int i=0 ; i<256 ; i++)
-            palette[i] = QColor::fromHsv(i, 255, 255, 255);
+            palette[i] = QColor::fromHsv(255-i, 255, 255, 255);
         }
         
     virtual ~Waterfall()
@@ -74,18 +75,19 @@ public:
         int byteCount = image.byteCount();
         uchar *buf = (uchar *)image.constBits();
         memmove(buf, buf+byteWidth, byteCount);
-        int psidx = 0;
         int acc = -size;
-        for (int x = 0; x < 0 ; x++)
+        for (int x = 0; x < width ; x++)
             {
-            unsigned int v = *ps++;
-            acc += width;
-            if (acc >= 0)
+            while (acc < 0)
                 {
-                QColor col = palette[v & 255];
-                painter.setPen(col);
-                painter.drawPoint(x,y);
+                ps++;
+                acc += width;
                 }
+            acc -= size;
+            unsigned int v  = *ps;
+            QColor col = palette[v>>1 & 255];
+            painter.setPen(col);
+            painter.drawPoint(x,y);
             }
         update();
         }
@@ -101,6 +103,11 @@ protected:
         {
         QPainter painter(this);
         painter.drawImage(0, 0, image);
+        int w = width();
+        int h = height();
+        int center = w >> 1;
+        painter.setPen(Qt::red);
+        painter.drawLine(center, 0, center, h);
         }
         
     virtual void resizeEvent(QResizeEvent *event) 
@@ -212,6 +219,10 @@ public:
             }
         repaint();
         }
+        
+signals:
+
+    void frequencyChanged(double freq);
 
 protected:
 
@@ -255,6 +266,7 @@ protected:
             digitIncr(idx);
         else
             digitDecr(idx);
+        emit frequencyChanged(getFrequency());
         repaint();
         }
 
@@ -268,6 +280,7 @@ protected:
             digitIncr(idx);
         else
             digitDecr(idx);
+        emit frequencyChanged(getFrequency());
         repaint();
         }
 
@@ -380,6 +393,7 @@ public:
         freqDial = new FreqDial();
         ui.freqDialBox->addWidget(freqDial);
         freqDial->setFrequency(123456789.0);
+        connect(freqDial, SIGNAL(frequencyChanged(double)), this, SLOT(setCenterFrequency(double)));
         show();
         }
         
@@ -389,6 +403,8 @@ public:
         delete waterfall;
         }
         
+public slots:
+
     double getCenterFrequency()
         {
         return sdrGetCenterFrequency(sdr);
@@ -397,6 +413,7 @@ public:
     void setCenterFrequency(double freq)
         {
         sdrSetCenterFrequency(sdr, freq);
+        status("freq: %f", freq);
         }
     
     float getGain()
@@ -424,8 +441,6 @@ public:
         {
         qDebug() << msg ;
         }
-
-public slots:
 
     void startStop()
         {

@@ -27,6 +27,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <sdrlib.h>
+#include <inttypes.h>
+#include <math.h>
 
 #include "fft.h"
 
@@ -43,7 +45,8 @@ Fft *fftCreate(int N)
     fft->in    = (fftw_complex*) fftw_malloc(sizeof(fftw_complex) * N);
     fft->out   = (fftw_complex*) fftw_malloc(sizeof(fftw_complex) * N);
     fft->plan  = fftw_plan_dft_1d(N, fft->in, fft->out, FFTW_FORWARD, FFTW_ESTIMATE);
-    fft->spectrum = (unsigned int *) malloc(N * sizeof(unsigned int));
+    int psSize = N;
+    fft->spectrum = (unsigned int *) malloc(psSize * sizeof(unsigned int));
     fft->inPtr = 0;
     fft->skipCounter = 0;
     fft->threshold = N * 5;
@@ -67,6 +70,14 @@ void fftDelete(Fft *fft)
 }
 
 
+static inline float 
+fasterlog2 (float x)
+{
+  union { float f; uint32_t i; } vx = { x };
+  float y = vx.i;
+  y *= 1.1920928955078125e-7f;
+  return y - 126.94269504f;
+}
 
 
 
@@ -86,11 +97,18 @@ void fftUpdate(Fft *fft, float complex *inbuf, int count, FftOutputFunc *func, v
             inPtr = 0;
             fftw_execute(fft->plan);
             unsigned int *ps = fft->spectrum;
-            fftw_complex *cpx = fft->out;
-            int count = N;
+            int half = N>>1;
+            fftw_complex *lower = fft->out;
+            fftw_complex *upper = fft->out + half;
+            int count = half;
             while (count--)
                 {
-                *ps++ = (unsigned int)cabs(*cpx++);
+                *ps++ = (unsigned int)(20.0 * fasterlog2(1.0 + cabsf(*upper++)));
+                }
+            count = half;
+            while (count--)
+                {
+                *ps++ = (unsigned int)(20.0 * fasterlog2(1.0 + cabsf(*lower++)));
                 }
             func(fft->spectrum, N, context);
             fft->skipCounter = 0;

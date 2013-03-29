@@ -91,6 +91,11 @@ int implDelete(Impl *impl)
 int implStart(Impl *impl)
 {
     pthread_t thread;
+    if (impl->running || impl->device)
+        {
+        error("Device already started");
+        return FALSE;
+        }
     if (!impl->deviceCount)
         {
         error("No devices found");
@@ -105,13 +110,15 @@ int implStart(Impl *impl)
     impl->device = d;
     d->setGain(d->ctx, 1.0);
     d->setCenterFrequency(d->ctx, 88700000.0);
-    impl->keepGoing = 1;
+    trace("starting");
     int rc = pthread_create(&thread, NULL, implReaderThread, (void *)impl);
     if (rc)
         {
         error("ERROR; return code from pthread_create() is %d", rc);
         return FALSE;
         }
+    trace("started");
+    impl->thread = thread;
     return TRUE;
 }
 
@@ -120,11 +127,15 @@ int implStart(Impl *impl)
  */   
 int implStop(Impl *impl)
 {
-    impl->keepGoing = 0;
+    impl->running = 0;
     void *status;
     pthread_join(impl->thread, &status);
-    impl->device->close(impl->device->ctx);
-    impl->device = NULL;
+    Device *d = impl->device;
+    if (d)
+        {
+        d->close(d->ctx);
+        impl->device = NULL;
+        }
     return TRUE;
 }
 
@@ -203,16 +214,21 @@ static void *implReaderThread(void *ctx)
     Impl *impl = (Impl *)ctx;
     Device *dev = impl->device;
     
+    impl->running = 1;
+    
     float complex *readbuf = (float complex *) malloc(READSIZE * sizeof(float complex));
     
-    while (impl->keepGoing && dev->isOpen(dev->ctx))
+    trace("aa\n");
+    while (impl->running && dev->isOpen(dev->ctx))
         {
         int count = dev->read(dev->ctx, readbuf, READSIZE);
-        //trace("read: %d", count);
+        trace("read: %d", count);
         fftUpdate(impl->fft, readbuf, count, fftOutput, impl);
         decimatorUpdate(impl->decimator, readbuf, count, decimatorOutput, impl);
         }
 
+    impl->running = 0;
+    trace("loop completed");
     free(readbuf);
     return NULL;
 }

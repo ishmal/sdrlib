@@ -47,7 +47,7 @@ struct Impl
     Device *devices[MAX_DEVICES];
     Device *device;
     pthread_t thread;
-    int keepGoing;
+    int running; //state of the reader thread
     Fft *fft;
     PowerSpectrumFunc *psFunc;
     void *psFuncCtx; 
