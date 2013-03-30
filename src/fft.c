@@ -44,12 +44,12 @@ Fft *fftCreate(int N)
     fft->N     = N;
     fft->in    = (fftw_complex*) fftw_malloc(sizeof(fftw_complex) * N);
     fft->out   = (fftw_complex*) fftw_malloc(sizeof(fftw_complex) * N);
-    fft->plan  = fftw_plan_dft_1d(N, fft->in, fft->out, FFTW_FORWARD, FFTW_ESTIMATE);
+    fft->plan  = fftw_plan_dft_1d(N, fft->in, fft->out, FFTW_FORWARD, FFTW_MEASURE);
     int psSize = N;
     fft->spectrum = (unsigned int *) malloc(psSize * sizeof(unsigned int));
     fft->inPtr = 0;
     fft->skipCounter = 0;
-    fft->threshold = N * 5;
+    fft->threshold = N * 20;
     return fft;
 }
 

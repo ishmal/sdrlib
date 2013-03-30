@@ -275,9 +275,12 @@ Decimator *decimatorCreate(int size, float highRate, float lowRate)
 
 void decimatorDelete(Decimator *dec)
 {
-    free(dec->delayLine);
-    free(dec->coeffs);
-    free(dec);
+    if (dec)
+        {
+        free(dec->delayLine);
+        free(dec->coeffs);
+        free(dec);
+        }
 }
 
 void decimatorUpdate(Decimator *dec, float complex *data, int dataLen, DecimatorFunc *func, void *context)
@@ -323,7 +326,7 @@ void decimatorUpdate(Decimator *dec, float complex *data, int dataLen, Decimator
             }
         delayIndex = (delayIndex + 1) % size;
         }
-    dec->delayIndex = delayIndex + 1;
+    dec->delayIndex = delayIndex;
     dec->acc = acc;
     dec->bufPtr = bufPtr;
 }

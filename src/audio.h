@@ -28,6 +28,7 @@
 
 
 #include <portaudio.h>
+#include <pthread.h>
 
 #define SENDBUF_SIZE (0xfffff + 1)  
 
@@ -36,6 +37,9 @@ typedef struct
     PaStream *stream;
     float sampleRate;
     float sendbuf[SENDBUF_SIZE];
+    pthread_mutex_t queueMutex;
+    pthread_cond_t  queueCond;
+    int queueSize;
     int head;
     int tail;
 } Audio;

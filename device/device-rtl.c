@@ -49,7 +49,11 @@ typedef struct
     float gainscale;
     unsigned char readbuf[BUFSIZE];
     float complex queue[BUFSIZE];
-    int head, tail;
+    pthread_t queueThread;
+    pthread_mutex_t queueMutex;
+    pthread_cond_t  queueCond;
+    int queueSize;
+    int head,tail;
     Parent *par;
     int isOpen;
 } Context;
@@ -59,35 +63,31 @@ typedef struct
 
 static int queuePush(Context *ctx, float complex v)
 {
+    pthread_mutex_lock(&(ctx->queueMutex));
+    while (ctx->queueSize >= BUFSIZE)
+        pthread_cond_wait(&(ctx->queueCond), &(ctx->queueMutex));
     int head = (ctx->head + 1) & 0xfffff;
-    if (head == ctx->tail)
-        {
-        //error("RTL queue full");
-        return FALSE;
-        }
-    else
-        {
-        //trace("head:%d tail:%d", head, ctx->tail);
-        ctx->queue[head] = v;
-        ctx->head = head;
-        return TRUE;
-        }
+    //trace("head:%d tail:%d", head, ctx->tail);
+    ctx->queue[head] = v;
+    ctx->queueSize++;
+    ctx->head = head;
+    pthread_cond_signal(&(ctx->queueCond));
+    pthread_mutex_unlock(&(ctx->queueMutex));
+    return TRUE;
 }
 
 static int queuePop(Context *ctx, float complex *v)
 {
+    pthread_mutex_lock(&(ctx->queueMutex));
+    while (ctx->queueSize== 0)
+        pthread_cond_wait(&(ctx->queueCond), &(ctx->queueMutex));
     int tail = (ctx->tail + 1) & 0xfffff;
-    if (ctx->head == tail)
-        {
-        //error("RTL queue empty");
-        return FALSE;
-        }
-    else
-        {
-        *v = ctx->queue[tail];
-        ctx->tail = tail;
-        return TRUE;
-        }
+    *v = ctx->queue[tail];
+    ctx->queueSize--;
+    ctx->tail = tail;
+    pthread_cond_signal(&(ctx->queueCond));
+    pthread_mutex_unlock(&(ctx->queueMutex));
+    return TRUE;
 }
 
 
@@ -228,10 +228,11 @@ static int transmit(void *context, int truefalse)
     return 0;
 }
 
-static int asyncLoop(void *context)
+static void *asyncLoop(void *context)
 {
     Context *ctx = (Context *)context;
     rtlsdr_read_async(ctx->dev, async_read_callback, ctx, 0, 0);
+    return NULL;
 }
 
 static int open(void *context)
@@ -265,10 +266,12 @@ static int open(void *context)
     
     ret = rtlsdr_reset_buffer(dev);
     ctx->isOpen = 1;
+    ctx->queueSize = 0;
     ctx->head = 1;
     ctx->tail = 0;
-    pthread_t thread;
-    int rc = pthread_create(&thread, NULL, asyncLoop, ctx);
+    pthread_mutex_init(&(ctx->queueMutex), NULL);
+    pthread_cond_init(&(ctx->queueCond), NULL);
+    int rc = pthread_create(&(ctx->queueThread), NULL, asyncLoop, ctx);
     if (rc)
         {
         ctx->par->error("ERROR; return code from pthread_create() is %d", rc);
@@ -298,6 +301,8 @@ static int close(void *context)
 static int delete(void *context)
 {
     Context *ctx = (Context *)context;
+    pthread_mutex_destroy(&(ctx->queueMutex));
+    pthread_cond_destroy(&(ctx->queueCond));
     free(ctx);   
     return 1;
 }
@@ -312,6 +317,7 @@ int deviceCreate(Device *dv, Parent *parent)
         }
     memset(ctx, 0, sizeof(Context));
     ctx->par               = parent;
+    pthread_mutex_init(&(ctx->queueMutex), NULL);
     int idx = 0;
     int hi,lo;
     for (hi = 0 ; hi < 256 ; hi++)

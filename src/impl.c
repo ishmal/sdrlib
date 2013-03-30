@@ -199,7 +199,7 @@ static void fftOutput(unsigned int *vals, int size, void *ctx)
 static void demodOutput(float *buf, int size, void *ctx)
 {
     Impl *impl = (Impl *)ctx;
-    trace("Push audio:%d", size);
+    //trace("Push audio:%d", size);
     audioPlay(impl->audio, buf, size);
 }
 
@@ -218,17 +218,14 @@ static void *implReaderThread(void *ctx)
     
     float complex *readbuf = (float complex *) malloc(READSIZE * sizeof(float complex));
     
-    trace("aa\n");
     while (impl->running && dev->isOpen(dev->ctx))
         {
         int count = dev->read(dev->ctx, readbuf, READSIZE);
-        trace("read: %d", count);
         fftUpdate(impl->fft, readbuf, count, fftOutput, impl);
         decimatorUpdate(impl->decimator, readbuf, count, decimatorOutput, impl);
         }
 
     impl->running = 0;
-    trace("loop completed");
     free(readbuf);
     return NULL;
 }

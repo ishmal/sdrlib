@@ -54,7 +54,9 @@ static int realpath(char *fname, char *fullpath)
 
 static void *dload(char *fname)
 {
-    return (void *)LoadLibrary(fname);
+    SetErrorMode(1);    
+    void *lib = (void *)LoadLibrary(fname);
+    return lib;
 }
 
 static void *dlsym(void *lib, char *funcname)
@@ -73,42 +75,13 @@ static void *dload(char *fname)
 #endif
 
 
-static char *getExecutableDir()
-{
-    char pathName[PATH_MAX+1];
-    if (!realpath(getprogname(), pathName))
-        return strdup(".");
-    char *pos = strrchr(pathName, SEPCHR);
-    //trace("Program name is %s", pathName);
-    if (!pos)
-        return strdup(".");
-    else
-        {
-        *pos = 0;
-        return strdup(pathName);
-        }
-}
 
-static char *getDeviceDir()
-{
-    char *dir = getExecutableDir();
-    //trace("Program dir is %s", dir);
-    int len = strlen(dir) + 8;
-    char *deviceDir = (char *) malloc(len);
-    strcpy(deviceDir, dir);
-    strcat(deviceDir, SEPSTR);
-    strcat(deviceDir, "device");
-    //trace("Device dir is %s", deviceDir);
-    free(dir);
-    return deviceDir;
-}
 
-int deviceScan(int type, Device **outbuf, int maxDevices)
+static int deviceScanDir(char *deviceDir, int type, Device **outbuf, int maxDevices)
 {
     parent.trace = trace;
     parent.error = error;
     
-    char *deviceDir = getDeviceDir();  
     int dirLen = strlen(deviceDir);
     DIR *dir = opendir(deviceDir);
     if (!dir)
@@ -166,5 +139,44 @@ int deviceScan(int type, Device **outbuf, int maxDevices)
     return count;
 }
 
+
+
+static void getExecutableDir(char *pathBuf)
+{
+    if (realpath(getprogname(), pathBuf))
+        strcpy(pathBuf, ".");
+    else
+        {
+        char *pos = strrchr(pathBuf, SEPCHR);
+        //trace("Program name is %s", pathName);
+        if (!pos)
+            strcpy(pathBuf, ".");
+        else
+            {
+            *pos = 0;
+            }
+       }
+}
+
+/**
+ * Check in one or more places for device dynamic libs
+ */ 
+int deviceScan(int type, Device **outbuf, int maxDevices)
+{
+    char pathName[PATH_MAX+1];
+    //Check for /device relative to the location of the executable
+    getExecutableDir(pathName);
+    strcat(pathName, SEPSTR);
+    strcat(pathName, "device");
+    
+    int count = deviceScanDir(pathName, type, outbuf, maxDevices);
+
+    //Check for /device relative to the current directory
+    if (realpath("device", pathName))
+        {
+        count += deviceScanDir(pathName, type, outbuf+count, maxDevices-count);
+        }
+    return count;
+}
 
 

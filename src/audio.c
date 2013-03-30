@@ -37,37 +37,33 @@
 
 
 
-static int queuePush(Audio *audio, float v)
+static int queuePush(Audio *ctx, float v)
 {
-    int head = (audio->head + 1) & 0xfffff;
-    if (head == audio->tail)
-        {
-        //error("Audio queue full");
-        return FALSE;
-        }
-    else
-        {
-        //trace("head:%d tail:%d", head, audio->tail);
-        audio->sendbuf[head] = v;
-        audio->head = head;
-        return TRUE;
-        }
+    pthread_mutex_lock(&(ctx->queueMutex));
+    while (ctx->queueSize >= SENDBUF_SIZE)
+        pthread_cond_wait(&(ctx->queueCond), &(ctx->queueMutex));
+    int head = (ctx->head + 1) & 0xfffff;
+    //trace("head:%d tail:%d", head, ctx->tail);
+    ctx->sendbuf[head] = v;
+    ctx->queueSize++;
+    ctx->head = head;
+    pthread_cond_signal(&(ctx->queueCond));
+    pthread_mutex_unlock(&(ctx->queueMutex));
+    return TRUE;
 }
 
-static float queuePop(Audio *audio)
+static float queuePop(Audio *ctx)
 {
-    int tail = (audio->tail + 1) & 0xfffff;
-    if (audio->head == tail)
-        {
-        //error("Audio queue empty");
-        return 0.0;
-        }
-    else
-        {
-        float v = audio->sendbuf[tail];
-        audio->tail = tail;
-        return v;
-        }
+    pthread_mutex_lock(&(ctx->queueMutex));
+    while (ctx->queueSize== 0)
+        pthread_cond_wait(&(ctx->queueCond), &(ctx->queueMutex));
+    int tail = (ctx->tail + 1) & 0xfffff;
+    float v = ctx->sendbuf[tail];
+    ctx->queueSize--;
+    ctx->tail = tail;
+    pthread_cond_signal(&(ctx->queueCond));
+    pthread_mutex_unlock(&(ctx->queueMutex));
+    return v;
 }
 
 
@@ -100,6 +96,8 @@ Audio *audioCreate()
     if (!audio)
         return audio;
     audio->sampleRate = (float)SAMPLE_RATE;
+    pthread_mutex_init(&(audio->queueMutex), NULL);
+    pthread_cond_init(&(audio->queueCond), NULL);
     audio->head = 1;
     audio->tail = 0;
 
@@ -153,10 +151,8 @@ Audio *audioCreate()
 int audioPlay(Audio *audio, float *data, int size)
 {
     while (size--)
-        {
         queuePush(audio, *data++);
-        }
-    return TRUE;
+     return TRUE;
 }
 
 /**
@@ -178,6 +174,8 @@ void audioDelete(Audio *audio)
     err = Pa_Terminate();
     if ( err != paNoError )
         error("audioDelete terminate: %s", Pa_GetErrorText(err) );
+    pthread_mutex_destroy(&(audio->queueMutex));
+    pthread_cond_destroy(&(audio->queueCond));
     free(audio);
 }
 
