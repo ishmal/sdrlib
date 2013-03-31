@@ -94,12 +94,21 @@ int implSetCenterFrequency(Impl *impl, double freq);
 
 /**
  */   
-float implGetGain(Impl *impl);
+float implGetRfGain(Impl *impl);
 
 
 /**
  */   
-int implSetGain(Impl *impl, float gain);
+int implSetRfGain(Impl *impl, float gain);
+
+/**
+ */   
+float implGetAfGain(Impl *impl);
+
+
+/**
+ */   
+int implSetAfGain(Impl *impl, float gain);
 
 
 

@@ -38,6 +38,7 @@ typedef struct
 {
     PaStream *stream;
     float sampleRate;
+    float gain;
     Queue *queue;
 } Audio;
 
@@ -61,6 +62,15 @@ int audioPlay(Audio *audio, float *data, int size);
 void audioDelete(Audio *audio);
 
 
+/**
+ * Return the gain, 0-1
+ */
+float audioGetGain(Audio *audio);
+
+/**
+ * Return the gain, 0-1
+ */
+int audioSetGain(Audio *audio, float gain);
 
 #endif /* _AUDIO_H_ */
 

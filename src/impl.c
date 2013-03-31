@@ -160,7 +160,7 @@ int implSetCenterFrequency(Impl *impl, double freq)
 
 /**
  */   
-float implGetGain(Impl *impl)
+float implGetRfGain(Impl *impl)
 {
     Device *d = impl->device;
     return (d) ? d->getGain(d->ctx) : 0.0;
@@ -170,10 +170,29 @@ float implGetGain(Impl *impl)
 
 /**
  */   
-int implSetGain(Impl *impl, float gain)
+int implSetRfGain(Impl *impl, float gain)
 {
     Device *d = impl->device;
     return (d) ? d->setGain(d->ctx, gain) : 0;
+}
+
+
+/**
+ */   
+float implGetAfGain(Impl *impl)
+{
+    Audio *a = impl->audio;
+    return (a) ? audioGetGain(a) : 0.0;
+}
+
+
+
+/**
+ */   
+int implSetAfGain(Impl *impl, float gain)
+{
+    Audio *a = impl->audio;
+    return (a) ? audioSetGain(a, gain) : 0;
 }
 
 

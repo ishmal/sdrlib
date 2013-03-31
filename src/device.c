@@ -96,22 +96,22 @@ static int deviceScanDir(char *deviceDir, int type, Device **outbuf, int maxDevi
         if (!de)
             break;
         char *name = de->d_name;
-        trace("name: '%s'", name);
+        //trace("name: '%s'", name);
         int fullLen = dirLen + 1 + strlen(name) + 1;
         char *fullName = (char *)malloc(fullLen);
         strcpy(fullName, deviceDir);
         strcat(fullName, SEPSTR);
         strcat(fullName, name);
-        trace("full name: '%s'", fullName);
+        //trace("full name: '%s'", fullName);
         
         void *dlib = dload(fullName);
         if (dlib)
             {
-            trace("got dynamic lib");
+            //trace("got dynamic lib");
             void *sym = dlsym(dlib, "deviceCreate");
             if (sym)
                 {
-                trace("got function");
+                //trace("got function");
                 DeviceOpenFunc *func = (DeviceOpenFunc *)sym;
                 Device *dev = (Device *)malloc(sizeof(Device));
                 if (!dev)
@@ -122,8 +122,7 @@ static int deviceScanDir(char *deviceDir, int type, Device **outbuf, int maxDevi
                 int ret = func(dev, &parent);
                 if (ret)
                     {
-                    trace("got device!!");
-                    trace("Name: %s", dev->name);
+                    trace("Loaded device: %s", dev->name);
                     outbuf[count++] = dev;
                     }
                 else

@@ -86,18 +86,33 @@ double sdrGetCenterFrequency(SdrLib *sdrlib);
 int sdrSetCenterFrequency(SdrLib *sdrlib, double freq);
 
 /**
- * Start sdrlib processing
+ * Get gain 0-1
  * @param sdrlib an SDRLib instance.
  */   
-float sdrGetGain(SdrLib *sdrlib);
+float sdrGetRfGain(SdrLib *sdrlib);
 
 
 
 /**
- * Stop sdrlib processing
+ * Set gain 0-1
  * @param sdrlib an SDRLib instance.
  */   
-int sdrSetGain(SdrLib *sdrlib, float gain);
+int sdrSetRfGain(SdrLib *sdrlib, float gain);
+
+
+/**
+ * Get gain 0-1
+ * @param sdrlib an SDRLib instance.
+ */   
+float sdrGetAfGain(SdrLib *sdrlib);
+
+
+
+/**
+ * Set gain 0-1
+ * @param sdrlib an SDRLib instance.
+ */   
+int sdrSetAfGain(SdrLib *sdrlib, float gain);
 
 
 typedef void PowerSpectrumFunc(unsigned int *ps, int size, void *ctx);

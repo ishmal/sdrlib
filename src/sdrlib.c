@@ -94,18 +94,35 @@ int sdrSetCenterFrequency(SdrLib *sdrlib, double freq)
 
 /**
  */   
-float sdrGetGain(SdrLib *sdrlib)
+float sdrGetRfGain(SdrLib *sdrlib)
 {
-    return implGetGain((Impl *)sdrlib->impl);
+    return implGetRfGain((Impl *)sdrlib->impl);
 }
 
 
 /**
  */   
-int sdrSetGain(SdrLib *sdrlib, float gain)
+int sdrSetRfGain(SdrLib *sdrlib, float gain)
 {
-    return implSetGain((Impl *)sdrlib->impl, gain);
+    return implSetRfGain((Impl *)sdrlib->impl, gain);
 }
+
+/**
+ */   
+float sdrGetAfGain(SdrLib *sdrlib)
+{
+    return implGetAfGain((Impl *)sdrlib->impl);
+}
+
+
+/**
+ */   
+int sdrSetAfGain(SdrLib *sdrlib, float gain)
+{
+    return implSetAfGain((Impl *)sdrlib->impl, gain);
+}
+
+
 
 void sdrSetPowerSpectrumFunc(SdrLib *sdrlib, PowerSpectrumFunc *func, void *ctx)
 {

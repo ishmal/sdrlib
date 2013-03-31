@@ -155,7 +155,7 @@ int parseAndExecute(SdrLib *sdr, char *buf)
         {
         if (!p0)
             {
-            float gain = sdrGetGain(sdr);
+            float gain = sdrGetRfGain(sdr);
             trace("gain: %f", gain);
             }
         else
@@ -168,7 +168,7 @@ int parseAndExecute(SdrLib *sdr, char *buf)
                     error("Gain must be in the range 0.0 .. 1.0");
                     }
                 else
-                    sdrSetGain(sdr, gain);
+                    sdrSetRfGain(sdr, gain);
                 }
             }
         }

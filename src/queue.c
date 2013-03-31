@@ -28,6 +28,7 @@
 #include <pthread.h>
 
 #include "queue.h"
+#include "private.h"
 
 #ifndef TRUE
 #define TRUE  1
@@ -49,6 +50,7 @@ Queue *queueCreate(int size)
     if (!queue)
         return NULL;
     memset(queue, 0, allocSize);
+    queue->size = size;
     pthread_cond_init(&(queue->cond), NULL);
     pthread_mutex_init(&(queue->mutex), NULL);
     return queue;
@@ -65,7 +67,7 @@ void queueDelete(Queue *queue)
             {
             int size;
             QueueItem *item = queuePop(queue, &size);
-            if (item)
+            if (item && item->buf)
                 free(item->buf);
             }
         pthread_cond_destroy(&(queue->cond));
@@ -107,6 +109,7 @@ void *queuePop(Queue *queue, int *size)
     QueueItem *qi = queue->buf + tail;
     void *buf = qi->buf;
     *size = qi->size;
+    queue->tail = tail;    
     queue->count--;    
     pthread_cond_signal(&(queue->cond));
     pthread_mutex_unlock(&(queue->mutex));

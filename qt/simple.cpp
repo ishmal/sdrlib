@@ -283,8 +283,13 @@ private:
 };
 
 
-#define FREQ_DIGITS 10
 
+
+
+#define FREQ_DIGITS 10
+/**
+ * A custom spinner-like frequency control
+ */ 
 class FreqDial : public QWidget
 {
     Q_OBJECT
@@ -317,7 +322,8 @@ public:
         double power = 1.0;
         for (int i = 0 ; i < FREQ_DIGITS ; i++)
             {
-            sum += power * (double) digits[i];
+            double d = (double) digits[i];
+            sum += power * d;
             power *= 10.0;
             }
         return sum;
@@ -325,6 +331,9 @@ public:
 
     void setFrequency(double freq)
         {
+        for (int i = 0 ; i < FREQ_DIGITS ; i++)
+            digits[i] = 0;
+        
         for (int i = 0 ; i < FREQ_DIGITS ; i++)
             {
             int dig = (int) fmod(freq,10.0);
@@ -493,9 +502,6 @@ static void powerSpectrumCallback(unsigned int *ps, int size, void *ctx)
 class Sdr : public QMainWindow
 {
     Q_OBJECT
-    Q_PROPERTY(double centerFrequency READ getCenterFrequency WRITE setCenterFrequency)
-    Q_PROPERTY(float gain READ getGain WRITE setGain)
-
 
 public:
 
@@ -533,16 +539,6 @@ public slots:
         status("freq: %f", freq);
         }
     
-    float getGain()
-        {
-        return sdrGetGain(sdr);
-        }
-    
-    void setGain(float gain)
-        {
-        sdrSetGain(sdr, gain);
-        }
-        
     Q_INVOKABLE void start()
         {
         sdrStart(sdr);
@@ -567,11 +563,18 @@ public slots:
             stop();
         }
 
-    void adjustGain(int gain)
+    void adjustRfGain(int gain)
         {
         float fgain = ((float)gain) / 100.0;
         status("gain:%f", fgain);
-        sdrSetGain(sdr, fgain);
+        sdrSetRfGain(sdr, fgain);
+        }
+
+    void adjustAfGain(int gain)
+        {
+        float fgain = ((float)gain) / 100.0;
+        status("gain:%f", fgain);
+        sdrSetAfGain(sdr, fgain);
         }
 
     void adjustFreqOffset(double val)

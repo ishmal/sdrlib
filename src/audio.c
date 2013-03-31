@@ -44,6 +44,7 @@ static int paCallback(const void *inputBuffer, void *outputBuffer,
                       void *userData)
 {
     Audio *audio = (Audio *) userData;
+    float gain = audio->gain;
     int size;
     float *inbuf = queuePop(audio->queue, &size);
     float *in = inbuf;
@@ -51,8 +52,9 @@ static int paCallback(const void *inputBuffer, void *outputBuffer,
     while (framesPerBuffer--)
         {
         //trace("v:%f",v);
-        *out++ = *in;
-        *out++ = *in++;
+        float v = (*in++) * gain;
+        *out++ = v;
+        *out++ = v;
         }
     free(inbuf);
     return paContinue;
@@ -69,6 +71,7 @@ Audio *audioCreate()
     if (!audio)
         return audio;
     audio->sampleRate = (float)SAMPLE_RATE;
+    audio->gain = 1000.0;
     audio->queue = queueCreate(1024);
 
     int err = Pa_Initialize();
@@ -145,5 +148,23 @@ void audioDelete(Audio *audio)
         error("audioDelete terminate: %s", Pa_GetErrorText(err) );
     queueDelete(audio->queue);
     free(audio);
+}
+
+
+/**
+ * Return the gain, 0-1
+ * Convert to 0-40 db 
+ */
+float audioGetGain(Audio *audio)
+{
+    return audio->gain * 0.001;
+}
+
+/**
+ * Return the gain, 0-1
+ */
+int audioSetGain(Audio *audio, float gain)
+{
+    audio->gain = gain * 1000.0;
 }
 

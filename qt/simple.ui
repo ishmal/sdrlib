@@ -77,7 +77,7 @@
     </property>
     <layout class="QVBoxLayout" name="freqDialBox"/>
    </widget>
-   <widget class="QSlider" name="audioGainSlider">
+   <widget class="QSlider" name="afGainSlider">
     <property name="geometry">
      <rect>
       <x>740</x>
@@ -85,6 +85,9 @@
       <width>160</width>
       <height>22</height>
      </rect>
+    </property>
+    <property name="toolTip">
+     <string>Adjust AF gain</string>
     </property>
     <property name="orientation">
      <enum>Qt::Horizontal</enum>
@@ -155,6 +158,25 @@
      </property>
     </widget>
    </widget>
+   <widget class="QSlider" name="rfGainSlider">
+    <property name="geometry">
+     <rect>
+      <x>570</x>
+      <y>230</y>
+      <width>160</width>
+      <height>22</height>
+     </rect>
+    </property>
+    <property name="toolTip">
+     <string>Adjust RF gain</string>
+    </property>
+    <property name="value">
+     <number>99</number>
+    </property>
+    <property name="orientation">
+     <enum>Qt::Horizontal</enum>
+    </property>
+   </widget>
   </widget>
   <widget class="QMenuBar" name="menubar">
    <property name="geometry">
@@ -162,7 +184,7 @@
      <x>0</x>
      <y>0</y>
      <width>932</width>
-     <height>22</height>
+     <height>21</height>
     </rect>
    </property>
    <widget class="QMenu" name="menuDevice">
@@ -234,22 +256,6 @@
    </hints>
   </connection>
   <connection>
-   <sender>audioGainSlider</sender>
-   <signal>valueChanged(int)</signal>
-   <receiver>MainWindow</receiver>
-   <slot>adjustGain(int)</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>827</x>
-     <y>252</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>883</x>
-     <y>278</y>
-    </hint>
-   </hints>
-  </connection>
-  <connection>
    <sender>amButton</sender>
    <signal>clicked(bool)</signal>
    <receiver>MainWindow</receiver>
@@ -313,14 +319,47 @@
     </hint>
    </hints>
   </connection>
+  <connection>
+   <sender>afGainSlider</sender>
+   <signal>valueChanged(int)</signal>
+   <receiver>MainWindow</receiver>
+   <slot>adjustAfGain(int)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>823</x>
+     <y>263</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>872</x>
+     <y>277</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>rfGainSlider</sender>
+   <signal>valueChanged(int)</signal>
+   <receiver>MainWindow</receiver>
+   <slot>adjustAfGain(int)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>709</x>
+     <y>260</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>717</x>
+     <y>277</y>
+    </hint>
+   </hints>
+  </connection>
  </connections>
  <slots>
   <slot>startStop()</slot>
-  <slot>adjustGain(int)</slot>
+  <slot>adjustAfGain(int)</slot>
   <slot>adjustFreqOffset(double)</slot>
   <slot>modeAm(bool)</slot>
   <slot>modeFm(bool)</slot>
   <slot>modeLsb(bool)</slot>
   <slot>modeUsb(bool)</slot>
+  <slot>adjustRfGain(int)</slot>
  </slots>
 </ui>
