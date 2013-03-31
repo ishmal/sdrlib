@@ -216,16 +216,18 @@ static void *implReaderThread(void *ctx)
     
     impl->running = 1;
     
-    float complex *readbuf = (float complex *) malloc(READSIZE * sizeof(float complex));
-    
     while (impl->running && dev->isOpen(dev->ctx))
         {
-        int count = dev->read(dev->ctx, readbuf, READSIZE);
-        fftUpdate(impl->fft, readbuf, count, fftOutput, impl);
-        decimatorUpdate(impl->decimator, readbuf, count, decimatorOutput, impl);
+        int size;
+        float complex *data = (float complex *)dev->read(dev->ctx, &size);
+        if (data)
+            {
+            fftUpdate(impl->fft, data, size, fftOutput, impl);
+            decimatorUpdate(impl->decimator, data, size, decimatorOutput, impl);
+            free(data);
+            }
         }
 
     impl->running = 0;
-    free(readbuf);
     return NULL;
 }

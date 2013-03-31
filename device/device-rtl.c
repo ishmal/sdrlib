@@ -31,6 +31,7 @@
 #include <rtl-sdr.h>
 
 #include "device.h"
+#include "queue.h"
 
 #ifndef TRUE
 #define TRUE  1
@@ -48,12 +49,8 @@ typedef struct
     float complex lut[256 * 256 * sizeof(float complex)];
     float gainscale;
     unsigned char readbuf[BUFSIZE];
-    float complex queue[BUFSIZE];
-    pthread_t queueThread;
-    pthread_mutex_t queueMutex;
-    pthread_cond_t  queueCond;
-    int queueSize;
-    int head,tail;
+    pthread_t asyncThread;
+    Queue *queue;
     Parent *par;
     int isOpen;
 } Context;
@@ -61,34 +58,7 @@ typedef struct
 
 
 
-static int queuePush(Context *ctx, float complex v)
-{
-    pthread_mutex_lock(&(ctx->queueMutex));
-    while (ctx->queueSize >= BUFSIZE)
-        pthread_cond_wait(&(ctx->queueCond), &(ctx->queueMutex));
-    int head = (ctx->head + 1) & 0xfffff;
-    //trace("head:%d tail:%d", head, ctx->tail);
-    ctx->queue[head] = v;
-    ctx->queueSize++;
-    ctx->head = head;
-    pthread_cond_signal(&(ctx->queueCond));
-    pthread_mutex_unlock(&(ctx->queueMutex));
-    return TRUE;
-}
 
-static int queuePop(Context *ctx, float complex *v)
-{
-    pthread_mutex_lock(&(ctx->queueMutex));
-    while (ctx->queueSize== 0)
-        pthread_cond_wait(&(ctx->queueCond), &(ctx->queueMutex));
-    int tail = (ctx->tail + 1) & 0xfffff;
-    *v = ctx->queue[tail];
-    ctx->queueSize--;
-    ctx->tail = tail;
-    pthread_cond_signal(&(ctx->queueCond));
-    pthread_mutex_unlock(&(ctx->queueMutex));
-    return TRUE;
-}
 
 
 
@@ -152,20 +122,22 @@ static double getCenterFrequency(void *context)
 
 
 
-static int read(void *context, float complex *cbuf, int buflen)
+static float complex *read(void *context, int *buflen)
 {
     Context *ctx = (Context *)context;
     if (!ctx->isOpen)
         return 0;
-    float complex v;
-    int count = 0;
-    for ( ; count < buflen ; count++)
+    int size;
+    float complex *buf = (float complex *)queuePop(ctx->queue, &size);
+    if (buf)
         {
-        if (!queuePop(ctx, &v))
-            break;
-        *cbuf++ = v;
+        *buflen = size;
+        return buf;
         }
-    return count;
+    else
+        {
+        return NULL;   
+        }            
 }
 
 
@@ -205,14 +177,18 @@ static void async_read_callback(unsigned char *buf, uint32_t len, void *context)
     Context *ctx = (Context *)context;
     float complex *lut = ctx->lut;
     unsigned char *b = buf;
-    int i = len >> 1;
+    int count = len>>1;
+    float complex *cpxbuf = (float complex *)malloc(count * sizeof(float complex));
+    //malloc check
+    float complex *cpx = cpxbuf;
+    int i = count;
     while (i--)
         {
         int hi = (int)*b++;
         int lo = (int)*b++;
-        float complex v = lut[(hi<<8) + lo];
-        queuePush(ctx, v);
+        *cpx++ = lut[(hi<<8) + lo];
         }
+    queuePush(ctx->queue, cpxbuf, count);
     //ctx->par->trace("len:%d", len);
 }
 
@@ -266,12 +242,8 @@ static int open(void *context)
     
     ret = rtlsdr_reset_buffer(dev);
     ctx->isOpen = 1;
-    ctx->queueSize = 0;
-    ctx->head = 1;
-    ctx->tail = 0;
-    pthread_mutex_init(&(ctx->queueMutex), NULL);
-    pthread_cond_init(&(ctx->queueCond), NULL);
-    int rc = pthread_create(&(ctx->queueThread), NULL, asyncLoop, ctx);
+    ctx->queue = queueCreate(1024);
+    int rc = pthread_create(&(ctx->asyncThread), NULL, asyncLoop, ctx);
     if (rc)
         {
         ctx->par->error("ERROR; return code from pthread_create() is %d", rc);
@@ -295,14 +267,13 @@ static int close(void *context)
     ctx->isOpen = 0;
     rtlsdr_cancel_async(ctx->dev);
     rtlsdr_close(ctx->dev);
+    queueDelete(ctx->queue);
     return 1;
 }
 
 static int delete(void *context)
 {
     Context *ctx = (Context *)context;
-    pthread_mutex_destroy(&(ctx->queueMutex));
-    pthread_cond_destroy(&(ctx->queueCond));
     free(ctx);   
     return 1;
 }
@@ -316,8 +287,7 @@ int deviceCreate(Device *dv, Parent *parent)
         return 0;
         }
     memset(ctx, 0, sizeof(Context));
-    ctx->par               = parent;
-    pthread_mutex_init(&(ctx->queueMutex), NULL);
+    ctx->par = parent;
     int idx = 0;
     int hi,lo;
     for (hi = 0 ; hi < 256 ; hi++)

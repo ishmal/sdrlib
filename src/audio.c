@@ -37,36 +37,6 @@
 
 
 
-static int queuePush(Audio *ctx, float v)
-{
-    pthread_mutex_lock(&(ctx->queueMutex));
-    while (ctx->queueSize >= SENDBUF_SIZE)
-        pthread_cond_wait(&(ctx->queueCond), &(ctx->queueMutex));
-    int head = (ctx->head + 1) & 0xfffff;
-    //trace("head:%d tail:%d", head, ctx->tail);
-    ctx->sendbuf[head] = v;
-    ctx->queueSize++;
-    ctx->head = head;
-    pthread_cond_signal(&(ctx->queueCond));
-    pthread_mutex_unlock(&(ctx->queueMutex));
-    return TRUE;
-}
-
-static float queuePop(Audio *ctx)
-{
-    pthread_mutex_lock(&(ctx->queueMutex));
-    while (ctx->queueSize== 0)
-        pthread_cond_wait(&(ctx->queueCond), &(ctx->queueMutex));
-    int tail = (ctx->tail + 1) & 0xfffff;
-    float v = ctx->sendbuf[tail];
-    ctx->queueSize--;
-    ctx->tail = tail;
-    pthread_cond_signal(&(ctx->queueCond));
-    pthread_mutex_unlock(&(ctx->queueMutex));
-    return v;
-}
-
-
 static int paCallback(const void *inputBuffer, void *outputBuffer,
                       unsigned long framesPerBuffer,
                       const PaStreamCallbackTimeInfo* timeInfo,
@@ -74,14 +44,17 @@ static int paCallback(const void *inputBuffer, void *outputBuffer,
                       void *userData)
 {
     Audio *audio = (Audio *) userData;
+    int size;
+    float *inbuf = queuePop(audio->queue, &size);
+    float *in = inbuf;
     float *out = (float *)outputBuffer;
     while (framesPerBuffer--)
         {
-        float v = queuePop(audio);
         //trace("v:%f",v);
-        *out++ = v;
-        *out++ = v;
+        *out++ = *in;
+        *out++ = *in++;
         }
+    free(inbuf);
     return paContinue;
 }
 
@@ -96,10 +69,7 @@ Audio *audioCreate()
     if (!audio)
         return audio;
     audio->sampleRate = (float)SAMPLE_RATE;
-    pthread_mutex_init(&(audio->queueMutex), NULL);
-    pthread_cond_init(&(audio->queueCond), NULL);
-    audio->head = 1;
-    audio->tail = 0;
+    audio->queue = queueCreate(1024);
 
     int err = Pa_Initialize();
     if ( err != paNoError )
@@ -119,7 +89,7 @@ Audio *audioCreate()
             NULL, /* no input */
             &parms,
             SAMPLE_RATE,
-            paFramesPerBufferUnspecified,
+            AUDIO_FRAMES_PER_BUFFER,
             paClipOff,      /* we won't output out of range samples so don't bother clipping them */
             paCallback,
             (void *)audio );
@@ -150,9 +120,8 @@ Audio *audioCreate()
  */
 int audioPlay(Audio *audio, float *data, int size)
 {
-    while (size--)
-        queuePush(audio, *data++);
-     return TRUE;
+    queuePush(audio->queue, data, size);
+    return TRUE;
 }
 
 /**
@@ -174,8 +143,7 @@ void audioDelete(Audio *audio)
     err = Pa_Terminate();
     if ( err != paNoError )
         error("audioDelete terminate: %s", Pa_GetErrorText(err) );
-    pthread_mutex_destroy(&(audio->queueMutex));
-    pthread_cond_destroy(&(audio->queueCond));
+    queueDelete(audio->queue);
     free(audio);
 }
 

@@ -115,7 +115,7 @@ struct Device
      * Read/write complex data to/from the device
      * @return true if successful, else false
      */
-    int (*read)(void *ctx, float complex *buf, int bufferlen);
+    float complex *(*read)(void *ctx, int *bufferlen);
     /**
      * Read/write complex data to/from the device
      * @return true if successful, else false

@@ -28,10 +28,16 @@
 
 #include <complex.h>
 
+#include "audio.h"
 
 typedef void DemodOutputFunc(float *buf, int size, void *context);
 
-#define DEMOD_BUFSIZE 40000
+
+/**
+ * It is important to send buffers the size that
+ * PortAudio expects
+ */  
+#define DEMOD_BUFSIZE (AUDIO_FRAMES_PER_BUFFER)
 
 typedef struct Demodulator Demodulator;
 
