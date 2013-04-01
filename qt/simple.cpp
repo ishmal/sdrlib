@@ -57,6 +57,7 @@ public:
         image = QPixmap(width(), height());
         for (int i=0 ; i<256 ; i++)
             palette[i] = QColor::fromHsv(255-i, 255, 255, 255);
+        vfoFreq = 0.0;
         }
         
     virtual ~Waterfall()
@@ -92,6 +93,36 @@ public:
     void sayHello(QString msg)
         {
         qDebug() << msg ;
+        }
+        
+    double getVfoFreq()
+        {
+        return vfoFreq;
+        }
+
+    void setVfoFreq(double val)
+        {
+        vfoFreq = val;
+        }
+
+    double getPbLoFreq()
+        {
+        return pbLoFreq;
+        }
+
+    void setPbLoFreq(double val)
+        {
+        pbLoFreq = val;
+        }
+
+    double getPbHiFreq()
+        {
+        return pbHiFreq;
+        }
+
+    void setPbHiFreq(double val)
+        {
+        pbHiFreq = val;
         }
 
 protected:
@@ -160,7 +191,12 @@ private:
 
     QPixmap image;
     QColor palette[256];
+    double vfoFreq;
+    double pbLoFreq;
+    double pbHiFreq;
 };
+
+
 
 class Waterfall_orig : public QWidget
 {
@@ -357,7 +393,7 @@ protected:
         QPainter painter(this);
         int w = width();
         int h = height();
-        QFont newFont("Courier", 20, QFont::Bold, true);
+        QFont newFont("Arial", 20, QFont::Bold, true);
         painter.setFont(newFont);
         painter.fillRect(0,0,w,h,Qt::black);
         painter.setPen( Qt::green );

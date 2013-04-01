@@ -73,6 +73,7 @@ int implDelete(Impl *impl)
         Device *d = impl->devices[i];
         d->delete(d->ctx);
         }
+    audioDelete(impl->audio);
     fftDelete(impl->fft);
     vfoDelete(impl->vfo);
     firDelete(impl->bpf);
