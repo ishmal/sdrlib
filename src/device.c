@@ -134,7 +134,6 @@ static int deviceScanDir(char *deviceDir, int type, Device **outbuf, int maxDevi
         free(fullName);
         }  
     
-    free(deviceDir);
     return count;
 }
 
