@@ -104,6 +104,7 @@ public:
         repaint();
         }
         
+        
 signals:
 
     void frequencyChanged(double freq);

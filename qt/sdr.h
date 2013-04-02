@@ -51,15 +51,38 @@ public:
     
     //#################################################################
     //# M E T H O D S
+    //# Will only need to move members to .cpp if there are circular refs
+    //# to its children. (dial, waterfall, etc)
     //#################################################################
         
-    void status(const char *format, ...);
+    void status(const char *format, va_list args)
+        {
+        vsnprintf(statbuf, STATBUFSIZE, format, args);
+        ui.statusbar->showMessage(statbuf);
+        }
+    
+    void status(const char *format, ...)
+        {
+        va_list args;
+        va_start(args, format);
+        status(format, args);
+        va_end(args);
+        }
+    
+    
+    float getSampleRate()
+        {
+        return sdrGetSampleRate(sdr);
+        }
+    
+    int setSampleRate(float rate)
+        {
+        return sdrSetSampleRate(sdr, rate);
+        }
+
 
     //#################################################################
     //# S L O T S
-    //# Leave these in the .h for now.  Will only need to move to .cpp
-    //# if/when there are circular refs to its children. (dial, waterfall, etc)
-    //# 
     //#################################################################
 
 public slots:
@@ -132,7 +155,7 @@ private:
     SdrLib *sdr;
     Waterfall *waterfall;
     FreqDial *freqDial;
-    static const int STATBUFSIZE=128;
+    static const int STATBUFSIZE = 256;
     char statbuf[STATBUFSIZE + 1];
 
 };

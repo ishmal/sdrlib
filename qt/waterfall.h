@@ -34,12 +34,15 @@
 #include <QPaintEvent>
 #include <QResizeEvent>
 #include <QHoverEvent>
+#include <QDragMoveEvent>
 #include <QMouseEvent>
 #include <QWheelEvent>
 #include <QKeyEvent>
+#include <QCursor>
 
 
 #include <stdarg.h>
+#include <stdio.h>
 #include <cmath>
 #include <sdrlib.h>
 
@@ -54,13 +57,19 @@ class Waterfall : public QWidget
 
 public:
 
+    typedef enum { TUNE_NONE=0, TUNE_LO, TUNE_VFO, TUNE_HI } TuneMode;
+
     Waterfall(Sdr &parent) : par(parent)
         {
         resize(400, 300);
         image = QPixmap(width(), height());
         for (int i=0 ; i<256 ; i++)
             palette[i] = QColor::fromHsv(255-i, 255, 255, 255);
-        vfoFreq = 0.0;
+        pbCol = QColor(50, 50, 100, 255); 
+        vfoFreq =     0.0;
+        pbLoOff = -50000.0;
+        pbHiOff =  50000.0;
+        tuneMode = TUNE_NONE;
         }
         
     virtual ~Waterfall()
@@ -106,27 +115,9 @@ public:
     void setVfoFreq(double val)
         {
         vfoFreq = val;
+        update();
         }
 
-    double getPbLoFreq()
-        {
-        return pbLoFreq;
-        }
-
-    void setPbLoFreq(double val)
-        {
-        pbLoFreq = val;
-        }
-
-    double getPbHiFreq()
-        {
-        return pbHiFreq;
-        }
-
-    void setPbHiFreq(double val)
-        {
-        pbHiFreq = val;
-        }
 
 protected:
 
@@ -139,6 +130,12 @@ protected:
         int center = w >> 1;
         painter.setPen(Qt::red);
         painter.drawLine(center, 0, center, h);
+        int pbLoX = freqToX(vfoFreq + pbLoOff);
+        int pbHiX = freqToX(vfoFreq + pbHiOff);
+        painter.fillRect(pbLoX, 0, pbHiX-pbLoX, h, pbCol);
+        int vfoX = freqToX(vfoFreq);
+        painter.setPen(Qt::green);
+        painter.drawLine(vfoX, 0, vfoX, h);
         }
         
     virtual void resizeEvent(QResizeEvent *event) 
@@ -151,26 +148,90 @@ protected:
         {
         }
 
-    virtual void mouseMoveEvent(QMouseEvent *event)
-        {
-        }
-
     virtual void wheelEvent(QWheelEvent *event)
         {
         }
 
     virtual void mousePressEvent(QMouseEvent *event)
         {
-        trace("Click!");
+        TuneMode currMode = getTuneMode(event);
+        //tuneMode = currMode;
+        tuneMode = TUNE_VFO;
+        }
+
+    virtual void mouseMoveEvent(QMouseEvent *event)
+        {
+        switch (tuneMode)
+            {
+            case TUNE_LO:
+                {
+                break;
+                }
+            case TUNE_VFO:
+                {       
+                int x = event->pos().x();
+                setVfoFreq(xToFreq(x));
+                break;
+                }
+            case TUNE_HI:
+                {       
+                break;
+                }
+            default:
+                {
+                TuneMode currMode = getTuneMode(event);
+                switch (currMode)
+                    {
+                    case TUNE_LO : 
+                        QCursor::setShape(Qt::SizeHorCursor);
+                        break;
+                    case TUNE_VFO : 
+                        QCursor::setShape(Qt::SizeAllCursor);
+                        break;
+                    case TUNE_HI : 
+                        QCursor::setShape(Qt::SizeHorCursor);
+                        break;
+                    default : 
+                        QCursor::setShape(Qt::ArrowCursor);
+                    }
+                }
+            }
         }
 
     virtual void mouseReleaseEvent(QMouseEvent *event)
         {
+        tuneMode = TUNE_NONE;
         }
 
  
  
 private:
+
+    TuneMode getTuneMode(QMouseEvent *event)
+        {
+        return TUNE_NONE;
+        }
+
+    float xToFreq(int x)
+        {
+        float fw = (float)width();
+        float fx = (float)x;
+        float proportion = fx/fw;
+        float pos = proportion - 0.5;
+        float f = pos * par.getSampleRate();
+        //status("fw:%f fx:%f pos:%f vfo:%f\n", fw, fx, pos, f);
+        return f;
+        }
+
+
+    int freqToX(float freq)
+        {
+        float proportion = freq / par.getSampleRate();
+        float pos = proportion + 0.5;
+        int x = (int)(pos * (float)width());
+        return x;
+        }
+
 
     void status(const char *format, ...)
         {
@@ -204,9 +265,12 @@ private:
     Sdr &par;
     QPixmap image;
     QColor palette[256];
+    QColor pbCol;
     double vfoFreq;
-    double pbLoFreq;
-    double pbHiFreq;
+    double pbLoOff;
+    double pbHiOff;
+    TuneMode tuneMode; 
+    bool dragging;
 };
 
 

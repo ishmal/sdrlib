@@ -35,15 +35,6 @@
 extern "C" {
 #endif
 
-/*
-#include "sdrlib.h"
-#include "audio.h"
-#include "demod.h"
-#include "device.h"
-#include "fft.h"
-#include "filter.h"
-#include "vfo.h"
-*/
 
 #include <pthread.h>
 
@@ -51,6 +42,9 @@ extern "C" {
 
 typedef void PowerSpectrumFunc(unsigned int *ps, int size, void *ctx);
 
+/**
+ * Forward declarations, hidden from clients
+ */
 typedef struct Audio       Audio; 
 typedef struct Biquad      Biquad; 
 typedef struct Decimator   Decimator; 
@@ -61,6 +55,10 @@ typedef struct Fft         Fft;
 typedef struct Queue       Queue; 
 typedef struct Vfo         Vfo; 
 
+
+/**
+ * Our main context
+ */
 typedef struct
 {
     int deviceCount;
@@ -79,6 +77,8 @@ typedef struct
     Demodulator *demodFm;
     Audio *audio;
 } SdrLib;
+
+
 
 /**
  * Create a new SdrLib instance.
