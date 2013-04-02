@@ -31,14 +31,53 @@
  */
 
 
-
 #ifdef __cplusplus
 extern "C" {
 #endif
 
+/*
+#include "sdrlib.h"
+#include "audio.h"
+#include "demod.h"
+#include "device.h"
+#include "fft.h"
+#include "filter.h"
+#include "vfo.h"
+*/
+
+#include <pthread.h>
+
+#define SDR_MAX_DEVICES 30
+
+typedef void PowerSpectrumFunc(unsigned int *ps, int size, void *ctx);
+
+typedef struct Audio       Audio; 
+typedef struct Biquad      Biquad; 
+typedef struct Decimator   Decimator; 
+typedef struct Demodulator Demodulator; 
+typedef struct Device      Device; 
+typedef struct Fir         Fir; 
+typedef struct Fft         Fft; 
+typedef struct Queue       Queue; 
+typedef struct Vfo         Vfo; 
+
 typedef struct
 {
-    void *impl;
+    int deviceCount;
+    Device *devices[SDR_MAX_DEVICES];
+    Device *device;
+    pthread_t thread;
+    int running; //state of the reader thread
+    Fft *fft;
+    PowerSpectrumFunc *psFunc;
+    void *psFuncCtx; 
+    Vfo *vfo;
+    Fir *bpf;
+    Decimator *decimator;
+    Demodulator *demod;
+    Demodulator *demodAm;
+    Demodulator *demodFm;
+    Audio *audio;
 } SdrLib;
 
 /**
@@ -86,6 +125,20 @@ double sdrGetCenterFrequency(SdrLib *sdrlib);
 int sdrSetCenterFrequency(SdrLib *sdrlib, double freq);
 
 /**
+ * Get the current sample rate, in samples/sec
+ * @param sdrlib an SDRLib instance.
+ */   
+float sdrGetSampleRate(SdrLib *sdrlib);
+
+
+
+/**
+ * Set the sample rate
+ * @param sdrlib an SDRLib instance.
+ */   
+int sdrSetSampleRate(SdrLib *sdrlib, float rate);
+
+/**
  * Get gain 0-1
  * @param sdrlib an SDRLib instance.
  */   
@@ -115,7 +168,6 @@ float sdrGetAfGain(SdrLib *sdrlib);
 int sdrSetAfGain(SdrLib *sdrlib, float gain);
 
 
-typedef void PowerSpectrumFunc(unsigned int *ps, int size, void *ctx);
 
 void sdrSetPowerSpectrumFunc(SdrLib *sdrlib, PowerSpectrumFunc *func, void *ctx);
 

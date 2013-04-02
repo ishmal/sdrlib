@@ -28,6 +28,9 @@
 #include <complex.h>
 
 
+#include "sdrlib.h"
+
+
 //########################################################################
 //#  F I R    F I L T E R S
 //########################################################################
@@ -37,14 +40,14 @@
  * Defines a base for a FIR filter
  */
 
-typedef struct
+struct Fir
 {
     int size;
     float *coeffs;
     int delayIndex;
     float *delayLine;
     float complex *delayLineC;
-} Fir;
+};
 
 
 enum
@@ -114,7 +117,7 @@ Fir *firBP(int size, float loCutoffFreq, float hiCutoffFreq, float sampleRate, i
 
 #define DECIMATOR_BUFSIZE (16384)
 
-typedef struct
+struct Decimator
 {
     int size;
     float *coeffs;
@@ -124,7 +127,7 @@ typedef struct
     float acc;
     float complex buf[DECIMATOR_BUFSIZE];
     int bufPtr;
-} Decimator;
+};
 
 Decimator *decimatorCreate(int size, float highRate, float lowRate);
 
@@ -140,7 +143,7 @@ void decimatorUpdate(Decimator *dec, float complex *data, int dataLen, Decimator
 //#  B I Q U A D
 //########################################################################
 
-typedef struct
+struct Biquad
 {
     float b0;
     float b1;
@@ -156,7 +159,7 @@ typedef struct
     float complex x2c;
     float complex y1c;
     float complex y2c;
-} Biquad;
+};
 
 
 

@@ -28,6 +28,7 @@
 
 #include <pthread.h>
 
+#include "sdrlib.h"
 
 typedef struct
 {
@@ -35,7 +36,7 @@ typedef struct
     int size;
 } QueueItem;
 
-typedef struct
+struct Queue
 {
     int head;
     pthread_mutex_t mutex;
@@ -45,7 +46,7 @@ typedef struct
     int count;
     //We will allocate space for the Queue, plus 'size' number of QueueItems
     QueueItem queueItems[];
-} Queue;
+};
 
 /**
  * Create a new Queue instance.

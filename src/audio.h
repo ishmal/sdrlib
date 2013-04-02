@@ -30,17 +30,19 @@
 #include <portaudio.h>
 #include <pthread.h>
 
+#include "sdrlib.h"
 #include "queue.h"
 
 #define AUDIO_FRAMES_PER_BUFFER (16*1024)
 
-typedef struct
+
+struct Audio
 {
     PaStream *stream;
     float sampleRate;
     float gain;
     Queue *queue;
-} Audio;
+};
 
 
 /**

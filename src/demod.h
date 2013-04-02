@@ -28,6 +28,8 @@
 
 #include <complex.h>
 
+
+#include "sdrlib.h"
 #include "audio.h"
 
 typedef void DemodOutputFunc(float *buf, int size, void *context);
@@ -39,7 +41,6 @@ typedef void DemodOutputFunc(float *buf, int size, void *context);
  */  
 #define DEMOD_BUFSIZE (AUDIO_FRAMES_PER_BUFFER)
 
-typedef struct Demodulator Demodulator;
 
 struct Demodulator
 {

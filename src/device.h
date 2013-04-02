@@ -27,6 +27,8 @@
  */
 
 #include <complex.h>
+
+#include "sdrlib.h"
 #include "util.h"
 
 typedef enum
@@ -36,9 +38,6 @@ typedef enum
 } DeviceType;
 
 
-
-
-typedef struct Device Device;
 
 
 

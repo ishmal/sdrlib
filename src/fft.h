@@ -29,8 +29,9 @@
 #include <complex.h>
 #include <fftw3.h>
 
+#include "sdrlib.h"
 
-typedef struct
+struct Fft
 {
     int N;
     fftw_complex *in;
@@ -40,7 +41,7 @@ typedef struct
     int inPtr;
     int skipCounter;
     int threshold;
-} Fft;
+};
 
 
 /**

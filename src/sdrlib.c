@@ -1,10 +1,5 @@
 /**
- * This is intended as a small and simple
- * SDR library with as low code complexity, 
- * and as few dependencies as possible.  
- * 
- * The goal is to make code readability, maintainability
- * and portability as high as possible.  
+ * This is the core engine of the sdr library  
  * 
  * Authors:
  *   Bob Jamison
@@ -19,7 +14,7 @@
  *  version 3 of the License, or (at your option) any later version.
  *
  *  This library is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  but WITHOUT ANY WARRANTY; without even the sdried warranty of
  *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  *  Lesser General Public License for more details.
  *
@@ -28,107 +23,267 @@
  *  Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-
-#include <stdio.h>
+#include <string.h>
 #include <stdlib.h>
-#include <sdrlib.h>
 
 
-#include "impl.h"
+#include "sdrlib.h"
+
+#include "audio.h"
+#include "demod.h"
+#include "device.h"
+#include "fft.h"
+#include "filter.h"
+#include "vfo.h"
+
+#include "private.h"
+
+
+static void *sdrReaderThread(void *ctx);
+
 
 /**
  */  
 SdrLib *sdrCreate()
 {
-    SdrLib *inst = (SdrLib *)malloc(sizeof(SdrLib));
-    if (!inst)
-        return NULL;
-    if (!implCreate(inst))
+    SdrLib * sdr = (SdrLib *) malloc(sizeof(SdrLib));
+    memset(sdr, 0, sizeof(SdrLib));
+    sdr->deviceCount = deviceScan(DEVICE_SDR, sdr->devices, SDR_MAX_DEVICES);
+    if (!sdr->deviceCount)
         {
-        free(inst);
-        return NULL;
+        error("No devices found");
+        //but dont fail. wait until start()
         }
-    return inst;
+    sdr->fft = fftCreate(16384);
+    sdr->vfo = vfoCreate(0.0, 2048000.0);
+    sdr->bpf = firBP(11, -50000.0, 50000.0, 2048000.0, W_HAMMING);
+    sdr->decimator = decimatorCreate(11, 2048000.0, 44100.0);
+    sdr->demodFm = demodFmCreate();
+    sdr->demodAm = demodAmCreate();
+    sdr->demod = sdr->demodFm; //TODO: make user-settable
+    sdr->audio = audioCreate();
+    return sdr;
 }
 
-/**
- */   
-int sdrDelete(SdrLib *sdrlib)
-{
-    int ret = implDelete((Impl *)sdrlib->impl);
-    free(sdrlib);
-    return ret;
-}
-
-
-
-/**
- */   
-int sdrStart(SdrLib *sdrlib)
-{
-    return implStart((Impl *)sdrlib->impl);
-}
 
 
 /**
  */   
-int sdrStop(SdrLib *sdrlib)
+int sdrDelete(SdrLib *sdr)
 {
-    return implStop((Impl *)sdrlib->impl);
+    int i=0;
+    for (; i < sdr->deviceCount ; i++)
+        {
+        Device *d = sdr->devices[i];
+        d->delete(d->ctx);
+        }
+    audioDelete(sdr->audio);
+    fftDelete(sdr->fft);
+    vfoDelete(sdr->vfo);
+    firDelete(sdr->bpf);
+    decimatorDelete(sdr->decimator);
+    demodDelete(sdr->demodFm);
+    demodDelete(sdr->demodAm);
+    free(sdr);
+    return TRUE;
 }
 
-/**
- */   
-double sdrGetCenterFrequency(SdrLib *sdrlib)
-{
-    return implGetCenterFrequency((Impl *)sdrlib->impl);
-}
 
-
-/**
- */   
-int sdrSetCenterFrequency(SdrLib *sdrlib, double freq)
-{
-    return implSetCenterFrequency((Impl *)sdrlib->impl, freq);
-}
-
-/**
- */   
-float sdrGetRfGain(SdrLib *sdrlib)
-{
-    return implGetRfGain((Impl *)sdrlib->impl);
-}
 
 
 /**
  */   
-int sdrSetRfGain(SdrLib *sdrlib, float gain)
+int sdrStart(SdrLib *sdr)
 {
-    return implSetRfGain((Impl *)sdrlib->impl, gain);
+    pthread_t thread;
+    if (sdr->running || sdr->device)
+        {
+        error("Device already started");
+        return FALSE;
+        }
+    if (!sdr->deviceCount)
+        {
+        error("No devices found");
+        return FALSE;
+        }
+    Device *d = sdr->devices[0];
+    if (!d->open(d->ctx))
+        {
+        error("Could not start device");
+        return FALSE;
+        }
+    sdr->device = d;
+    d->setGain(d->ctx, 1.0);
+    d->setCenterFrequency(d->ctx, 88700000.0);
+    trace("starting");
+    int rc = pthread_create(&thread, NULL, sdrReaderThread, (void *)sdr);
+    if (rc)
+        {
+        error("ERROR; return code from pthread_create() is %d", rc);
+        return FALSE;
+        }
+    trace("started");
+    sdr->thread = thread;
+    return TRUE;
+}
+
+
+/**
+ */   
+int sdrStop(SdrLib *sdr)
+{
+    sdr->running = 0;
+    void *status;
+    pthread_join(sdr->thread, &status);
+    Device *d = sdr->device;
+    if (d)
+        {
+        d->close(d->ctx);
+        sdr->device = NULL;
+        }
+    return TRUE;
 }
 
 /**
  */   
-float sdrGetAfGain(SdrLib *sdrlib)
+double sdrGetCenterFrequency(SdrLib *sdr)
 {
-    return implGetAfGain((Impl *)sdrlib->impl);
+    Device *d = sdr->device;
+    return (d) ? d->getCenterFrequency(d->ctx) : 0.0;
 }
 
 
 /**
  */   
-int sdrSetAfGain(SdrLib *sdrlib, float gain)
+int sdrSetCenterFrequency(SdrLib *sdr, double freq)
 {
-    return implSetAfGain((Impl *)sdrlib->impl, gain);
+    Device *d = sdr->device;
+    return (d) ? d->setCenterFrequency(d->ctx, freq) : 0;
 }
 
 
 
-void sdrSetPowerSpectrumFunc(SdrLib *sdrlib, PowerSpectrumFunc *func, void *ctx)
+/**
+ */   
+float sdrGetSampleRate(SdrLib *sdr)
 {
-    Impl *impl = (Impl *)sdrlib->impl;
-    impl->psFunc = func;
-    impl->psFuncCtx = ctx;
+    Device *d = sdr->device;
+    return (d) ? d->getSampleRate(d->ctx) : 0.0;
 }
+
+
+
+/**
+ */   
+int sdrSetSampleRate(SdrLib *sdr, float rate)
+{
+    Device *d = sdr->device;
+    return (d) ? d->setSampleRate(d->ctx, rate) : 0;
+}
+
+
+
+/**
+ */   
+float sdrGetRfGain(SdrLib *sdr)
+{
+    Device *d = sdr->device;
+    return (d) ? d->getGain(d->ctx) : 0.0;
+}
+
+
+
+/**
+ */   
+int sdrSetRfGain(SdrLib *sdr, float gain)
+{
+    Device *d = sdr->device;
+    return (d) ? d->setGain(d->ctx, gain) : 0;
+}
+
+
+/**
+ */   
+float sdrGetAfGain(SdrLib *sdr)
+{
+    Audio *a = sdr->audio;
+    return (a) ? audioGetGain(a) : 0.0;
+}
+
+
+
+/**
+ */   
+int sdrSetAfGain(SdrLib *sdr, float gain)
+{
+    Audio *a = sdr->audio;
+    return (a) ? audioSetGain(a, gain) : 0;
+}
+
+
+
+/**
+ */   
+void sdrSetPowerSpectrumFunc(SdrLib *sdr, PowerSpectrumFunc *func, void *ctx)
+{
+    sdr->psFunc = func;
+    sdr->psFuncCtx = ctx;
+}
+
+
+
+
+
+
+
+
+#define READSIZE (8 * 16384)
+
+static void fftOutput(unsigned int *vals, int size, void *ctx)
+{
+    SdrLib *sdr = (SdrLib *)ctx;
+    PowerSpectrumFunc *psFunc = sdr->psFunc;
+    void *psFuncCtx = sdr->psFuncCtx;
+    if (psFunc) (*psFunc)(vals, size, psFuncCtx);
+}
+
+static void demodOutput(float *buf, int size, void *ctx)
+{
+    SdrLib *sdr = (SdrLib *)ctx;
+    //trace("Push audio:%d", size);
+    audioPlay(sdr->audio, buf, size);
+}
+
+static void decimatorOutput(float complex *data, int size, void *ctx)
+{
+    SdrLib *sdr = (SdrLib *)ctx;
+    sdr->demod->update(sdr->demod, data, size, demodOutput, sdr);
+}
+
+static void *sdrReaderThread(void *ctx)
+{
+    SdrLib *sdr = (SdrLib *)ctx;
+    Device *dev = sdr->device;
+    
+    sdr->running = 1;
+    
+    while (sdr->running && dev->isOpen(dev->ctx))
+        {
+        int size;
+        float complex *data = (float complex *)dev->read(dev->ctx, &size);
+        if (data)
+            {
+            fftUpdate(sdr->fft, data, size, fftOutput, sdr);
+            decimatorUpdate(sdr->decimator, data, size, decimatorOutput, sdr);
+            free(data);
+            }
+        }
+
+    sdr->running = 0;
+    return NULL;
+}
+
+
+
 
 
