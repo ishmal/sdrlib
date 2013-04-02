@@ -4,14 +4,14 @@ set(CMAKE_INCLUDE_CURRENT_DIR ON)
 set(CMAKE_AUTOMOC ON)
 find_package(Qt5Widgets REQUIRED)
 
-get_cmake_property(_variableNames VARIABLES)
-foreach (_variableName ${_variableNames})
-    message(STATUS "${_variableName}=${${_variableName}}")
-endforeach()
+#get_cmake_property(_variableNames VARIABLES)
+#foreach (_variableName ${_variableNames})
+#    message(STATUS "${_variableName}=${${_variableName}}")
+#endforeach()
 
 qt5_wrap_ui(ui_simple.h simple.ui)
    
-add_executable(simple simple.cpp ui_simple.h)
+add_executable(simple simple.cpp sdr.cpp ui_simple.h sdr.h freqdial.h waterfall.h)
 qt5_use_modules(simple Widgets)
 
 include_directories(${Qt5Widgets_INCLUDE_DIRS})
