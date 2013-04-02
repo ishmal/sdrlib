@@ -130,14 +130,8 @@ static float complex *read(void *context, int *buflen)
     int size;
     float complex *buf = (float complex *)queuePop(ctx->queue, &size);
     if (buf)
-        {
         *buflen = size;
-        return buf;
-        }
-    else
-        {
-        return NULL;   
-        }            
+    return buf;
 }
 
 

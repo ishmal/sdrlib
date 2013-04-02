@@ -63,15 +63,18 @@ void queueDelete(Queue *queue)
 {
     if (queue)
         {
+        pthread_mutex_t mutex = queue->mutex;
+        pthread_mutex_lock(&mutex);
         while (queue->count > 0)
             {
             int size;
-            QueueItem *item = queuePop(queue, &size);
-            if (item && item->buf)
-                free(item->buf);
+            void *buf = queuePop(queue, &size);
+            if (buf)
+                free(buf);
             }
         pthread_cond_destroy(&(queue->cond));
-        pthread_mutex_destroy(&(queue->mutex));
+        pthread_mutex_unlock(&mutex);
+        pthread_mutex_destroy(&mutex);
         free(queue);
         }
 }
@@ -86,7 +89,7 @@ int queuePush(Queue *queue, void *buf, int size)
     while (queue->count >= queue->size)
         pthread_cond_wait(&(queue->cond),&(queue->mutex));
     int head = (queue->head + 1) % queue->size;
-    QueueItem *qi = queue->buf + head;
+    QueueItem *qi = queue->queueItems + head;
     qi->buf = buf;
     qi->size = size;
     queue->head = head;
@@ -106,7 +109,7 @@ void *queuePop(Queue *queue, int *size)
     while (queue->count <= 0)
         pthread_cond_wait(&(queue->cond),&(queue->mutex));
     int tail = (queue->tail + 1) % queue->size;
-    QueueItem *qi = queue->buf + tail;
+    QueueItem *qi = queue->queueItems + tail;
     void *buf = qi->buf;
     *size = qi->size;
     queue->tail = tail;    

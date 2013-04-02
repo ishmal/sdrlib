@@ -43,7 +43,8 @@ typedef struct
     int tail;
     int size;
     int count;
-    QueueItem buf[];
+    //We will allocate space for the Queue, plus 'size' number of QueueItems
+    QueueItem queueItems[];
 } Queue;
 
 /**
