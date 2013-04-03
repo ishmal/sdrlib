@@ -60,7 +60,8 @@ SdrLib *sdrCreate()
     sdr->ddc = ddcCreate(11, 0.0, -5000.0, 5000.0, 2048000.0);
     sdr->demodFm = demodFmCreate();
     sdr->demodAm = demodAmCreate();
-    sdr->demod = sdr->demodFm; //TODO: make user-settable
+    sdr->demod = sdr->demodFm;
+    sdr->resampler  = resamplerCreate(11, 44100.0, 44100.0);
     sdr->audio = audioCreate();
     return sdr;
 }
@@ -84,6 +85,7 @@ int sdrDelete(SdrLib *sdr)
     ddcDelete(sdr->ddc);
     demodDelete(sdr->demodFm);
     demodDelete(sdr->demodAm);
+    resamplerDelete(sdr->resampler);
     free(sdr);
     return TRUE;
 }
@@ -253,11 +255,21 @@ static void fftOutput(unsigned int *vals, int size, void *ctx)
     if (psFunc) (*psFunc)(vals, size, psFuncCtx);
 }
 
-static void demodOutput(float *buf, int size, void *ctx)
+
+static void resamplerOutput(float *buf, int size, void *ctx)
 {
     SdrLib *sdr = (SdrLib *)ctx;
     //trace("Push audio:%d", size);
     audioPlay(sdr->audio, buf, size);
+}
+
+
+
+static void demodOutput(float *buf, int size, void *ctx)
+{
+    SdrLib *sdr = (SdrLib *)ctx;
+    //trace("Push audio:%d", size);
+    resamplerUpdate(sdr->resampler, buf, size, resamplerOutput, sdr);
 }
 
 static void ddcOutput(float complex *data, int size, void *ctx)

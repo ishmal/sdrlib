@@ -53,6 +53,7 @@ typedef struct Demodulator Demodulator;
 typedef struct Device      Device; 
 typedef struct Fir         Fir; 
 typedef struct Fft         Fft; 
+typedef struct Resampler   Resampler;
 typedef struct Queue       Queue; 
 typedef struct Vfo         Vfo; 
 
@@ -76,6 +77,7 @@ typedef struct
     Demodulator *demod;
     Demodulator *demodAm;
     Demodulator *demodFm;
+    Resampler   *resampler;
     Audio *audio;
 } SdrLib;
 

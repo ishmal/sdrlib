@@ -184,7 +184,6 @@ void ddcUpdate(Ddc *obj, float complex *data, int dataLen, DdcFunc *func, void *
 #define RESAMPLER_BUFSIZE (16384)
 
 
-typedef struct Resampler Resampler;
 
 struct Resampler
 {
