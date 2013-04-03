@@ -28,18 +28,39 @@
  
 #include "sdrlib.h"
 
+#include <complex.h>
+
+/**
+ *
+ */
 struct Vfo
 {
-    float freq;  //angular frequency in radians/sample
-    float acc;
+    float sampleRate;
+    float complex phase;
+    float complex freq;
 };
 
 
-
+/**
+ *
+ */
 Vfo *vfoCreate(float frequency, float sampleRate);
 
-
+/**
+ *
+ */
 void vfoDelete(Vfo *vfo);
+
+/**
+ *
+ */
+void vfoSetFrequency(Vfo *vfo, float frequency);
+
+/**
+ *
+ */
+float complex vfoUpdate(Vfo *vfo, float complex sample);
+
 
 
 #endif /* _VFO_H_ */

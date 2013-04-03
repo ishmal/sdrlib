@@ -47,6 +47,7 @@ typedef void PowerSpectrumFunc(unsigned int *ps, int size, void *ctx);
  */
 typedef struct Audio       Audio; 
 typedef struct Biquad      Biquad; 
+typedef struct Ddc         Ddc; 
 typedef struct Decimator   Decimator; 
 typedef struct Demodulator Demodulator; 
 typedef struct Device      Device; 
@@ -69,9 +70,9 @@ typedef struct
     Fft *fft;
     PowerSpectrumFunc *psFunc;
     void *psFuncCtx; 
-    Vfo *vfo;
-    Fir *bpf;
-    Decimator *decimator;
+    //Vfo *vfo;
+    //Fir *bpf;
+    Ddc *ddc;
     Demodulator *demod;
     Demodulator *demodAm;
     Demodulator *demodFm;
@@ -123,6 +124,10 @@ double sdrGetCenterFrequency(SdrLib *sdrlib);
  * @param sdrlib an SDRLib instance.
  */   
 int sdrSetCenterFrequency(SdrLib *sdrlib, double freq);
+
+/**
+ */   
+void sdrSetDdcFreqs(SdrLib *sdr, float vfoFreq, float pbLoOff, float pbHioff);
 
 /**
  * Get the current sample rate, in samples/sec

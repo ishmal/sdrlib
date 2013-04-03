@@ -27,6 +27,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
+#include <math.h>
 
 #include "vfo.h"
 #include "private.h"
@@ -39,16 +40,30 @@ Vfo *vfoCreate(float frequency, float sampleRate)
     Vfo *vfo = (Vfo *)malloc(sizeof(Vfo));
     if (!vfo)
         return NULL;
-    vfo->freq = TWOPI * frequency / sampleRate;
-    vfo->acc  = 0.0;
+    vfo->sampleRate = sampleRate;
+    vfo->phase = 0.0 + I * 1.0;
+    vfoSetFrequency(vfo, frequency);
     return vfo;
 }
-
 
 void vfoDelete(Vfo *vfo)
 {
     free(vfo);
 }
+
+void vfoSetFrequency(Vfo *vfo, float frequency)
+{
+    float angle = TWOPI * frequency / vfo->sampleRate;
+    vfo->freq = cos(angle) + I * sin(angle);
+}
+
+float complex vfoUpdate(Vfo *vfo, float complex sample)
+{
+    vfo->phase *= vfo->freq;
+    return sample * vfo->phase;
+}
+
+
 
 
 

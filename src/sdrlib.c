@@ -55,9 +55,9 @@ SdrLib *sdrCreate()
         //but dont fail. wait until start()
         }
     sdr->fft = fftCreate(16384);
-    sdr->vfo = vfoCreate(0.0, 2048000.0);
-    sdr->bpf = firBP(11, -50000.0, 50000.0, 2048000.0, W_HAMMING);
-    sdr->decimator = decimatorCreate(11, 2048000.0, 44100.0);
+    //sdr->vfo = vfoCreate(0.0, 2048000.0);
+    //sdr->bpf = firBP(11, -50000.0, 50000.0, 2048000.0, W_HAMMING);
+    sdr->ddc = ddcCreate(11, 0.0, -5000.0, 5000.0, 2048000.0);
     sdr->demodFm = demodFmCreate();
     sdr->demodAm = demodAmCreate();
     sdr->demod = sdr->demodFm; //TODO: make user-settable
@@ -79,9 +79,9 @@ int sdrDelete(SdrLib *sdr)
         }
     audioDelete(sdr->audio);
     fftDelete(sdr->fft);
-    vfoDelete(sdr->vfo);
-    firDelete(sdr->bpf);
-    decimatorDelete(sdr->decimator);
+    //vfoDelete(sdr->vfo);
+    //firDelete(sdr->bpf);
+    ddcDelete(sdr->ddc);
     demodDelete(sdr->demodFm);
     demodDelete(sdr->demodAm);
     free(sdr);
@@ -161,6 +161,12 @@ int sdrSetCenterFrequency(SdrLib *sdr, double freq)
     return (d) ? d->setCenterFrequency(d->ctx, freq) : 0;
 }
 
+/**
+ */   
+void sdrSetDdcFreqs(SdrLib *sdr, float vfoFreq, float pbLoOff, float pbHiOff)
+{
+    ddcSetFreqs(sdr->ddc, vfoFreq, pbLoOff, pbHiOff);
+}
 
 
 /**
@@ -254,7 +260,7 @@ static void demodOutput(float *buf, int size, void *ctx)
     audioPlay(sdr->audio, buf, size);
 }
 
-static void decimatorOutput(float complex *data, int size, void *ctx)
+static void ddcOutput(float complex *data, int size, void *ctx)
 {
     SdrLib *sdr = (SdrLib *)ctx;
     sdr->demod->update(sdr->demod, data, size, demodOutput, sdr);
@@ -274,7 +280,7 @@ static void *sdrReaderThread(void *ctx)
         if (data)
             {
             fftUpdate(sdr->fft, data, size, fftOutput, sdr);
-            decimatorUpdate(sdr->decimator, data, size, decimatorOutput, sdr);
+            ddcUpdate(sdr->ddc, data, size, ddcOutput, sdr);
             free(data);
             }
         }

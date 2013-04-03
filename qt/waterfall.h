@@ -108,16 +108,53 @@ public:
         qDebug() << msg ;
         }
         
+    void setVfoFreq(double val)
+        {
+        vfoFreq = val;
+        emit frequenciesChanged(vfoFreq, pbLoOff, pbHiOff);
+        update();
+        }
+
     double getVfoFreq()
         {
         return vfoFreq;
         }
 
-    void setVfoFreq(double val)
+    void setPbLoOff(double val)
         {
-        vfoFreq = val;
-        update();
+        if (val < pbHiOff)
+            {
+            pbLoOff = val;
+            status("Bw: %f", pbHiOff - pbLoOff);
+            emit frequenciesChanged(vfoFreq, pbLoOff, pbHiOff);
+            update();
+            }
         }
+
+    double getPbLoOff()
+        {
+        return pbLoOff;
+        }
+
+    void setPbHiOff(double val)
+        {
+        if (val > pbLoOff)
+            {
+            pbHiOff = val;
+            status("Bw: %f", pbHiOff - pbLoOff);
+            emit frequenciesChanged(vfoFreq, pbLoOff, pbHiOff);
+            update();
+            }
+        }
+
+    double getPbHiOff()
+        {
+        return pbHiOff;
+        }
+
+signals:
+
+    void frequenciesChanged(float vfoFreq, float pbLoOff, float pbHiOff);
 
 
 protected:
@@ -159,40 +196,28 @@ protected:
         {
         int x = event->pos().x();
         float freq = xToFreq(x);
-        status("move:%d", x);
         switch (tuneMode)
             {
             case TUNE_LO:
                 {
-                float off = freq - vfoFreq;
-                if (off < pbHiOff)
-                    {
-                    pbLoOff = off;
-                    update();
-                    }
+                setPbLoOff(freq - vfoFreq);
                 break;
                 }
             case TUNE_VFO:
                 {
-                setVfoFreq(xToFreq(x));
+                setVfoFreq(freq);
                 break;
                 }
             case TUNE_HI:
                 {       
-                float off = freq - vfoFreq;
-                if (off > pbLoOff)
-                    {
-                    pbHiOff = off;
-                    update();
-                    }
+                setPbHiOff(freq - vfoFreq);
                 break;
                 }
             default:
                 {
-                TuneMode currMode = getTuneMode(event);
+                TuneMode currMode = getTuneMode(x);
                 if (currMode == hoverMode)
                     return;
-                trace("mode:%d", hoverMode);
                 hoverMode = currMode;
                 switch (hoverMode)
                     {
@@ -221,9 +246,8 @@ protected:
  
 private:
 
-    TuneMode getTuneMode(QMouseEvent *event)
+    TuneMode getTuneMode(int x)
         {
-        int x = event->x();
         int pbLoX = freqToX(vfoFreq + pbLoOff);
         int vfoX  = freqToX(vfoFreq);
         int pbHiX = freqToX(vfoFreq + pbHiOff);

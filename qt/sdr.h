@@ -97,6 +97,11 @@ public slots:
         sdrSetCenterFrequency(sdr, freq);
         status("freq: %f", freq);
         }
+        
+    void setDdcFreqs(float vfoFreq, float pbLoOff, float pbHiOff)
+        {
+        sdrSetDdcFreqs(sdr, vfoFreq, pbLoOff, pbHiOff);
+        }
     
     void startStop()
         {

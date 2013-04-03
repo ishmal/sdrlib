@@ -166,5 +166,6 @@ float audioGetGain(Audio *audio)
 int audioSetGain(Audio *audio, float gain)
 {
     audio->gain = gain * 1000.0;
+    return TRUE;
 }
 

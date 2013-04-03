@@ -63,6 +63,7 @@ Sdr::Sdr()
     waterfall = new Waterfall(*this);
     sdrSetPowerSpectrumFunc(sdr, powerSpectrumCallback, (void *)waterfall);
     ui.waterfallBox->addWidget(waterfall);
+    connect(waterfall, SIGNAL(frequenciesChanged(float,float,float)), this, SLOT(setDdcFreqs(float,float,float)));
     freqDial = new FreqDial(*this);
     ui.freqDialBox->addWidget(freqDial);
     freqDial->setFrequency(123456789.0);

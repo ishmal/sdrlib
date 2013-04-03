@@ -133,9 +133,83 @@ Decimator *decimatorCreate(int size, float highRate, float lowRate);
 
 void decimatorDelete(Decimator *dec);
 
+void decimatorSetRates(Decimator *dec, float highRate, float lowRate);
+
 typedef void DecimatorFunc(float complex *data, int size, void *context);
 
 void decimatorUpdate(Decimator *dec, float complex *data, int dataLen, DecimatorFunc *func, void *context);
+
+
+//########################################################################
+//#  D D C
+//########################################################################
+
+
+#define DDC_BUFSIZE (16384)
+
+
+struct Ddc
+{
+    int   size;
+    float *coeffs;
+    float complex *delayLine;
+    int   delayIndex;
+    float ratio;
+    float inRate;
+    float outRate;
+    float complex phase;
+    float complex freq;
+    float acc;
+    float complex buf[DECIMATOR_BUFSIZE];
+    int   bufPtr;
+};
+
+Ddc *ddcCreate(int size, float vfoFreq, float pbLoOff, float pbHiOff, float sampleRate);
+
+void ddcDelete(Ddc *obj);
+
+void ddcSetFreqs(Ddc *obj, float vfoFreq, float pbLoOff, float pbHiOff);
+
+typedef void DdcFunc(float complex *data, int size, void *context);
+
+void ddcUpdate(Ddc *obj, float complex *data, int dataLen, DdcFunc *func, void *context);
+
+
+//########################################################################
+//#  R E S A M P L E R
+//#  A more general version of the decimator.  Goes both directions
+//########################################################################
+
+
+#define RESAMPLER_BUFSIZE (16384)
+
+
+typedef struct Resampler Resampler;
+
+struct Resampler
+{
+    int size;
+    float *coeffs;
+    float *delayLine;
+    float complex *delayLineC;
+    int delayIndex;
+    float ratio;
+    int updown;
+    float acc;
+    float buf[RESAMPLER_BUFSIZE];
+    float complex bufC[RESAMPLER_BUFSIZE];
+    int bufPtr;
+};
+
+Resampler *resamplerCreate(int size, float highRate, float lowRate);
+
+void resamplerDelete(Resampler *obj);
+
+typedef void ResamplerFunc(float *data, int size, void *context);
+typedef void ResamplerFuncC(float complex *data, int size, void *context);
+
+void resamplerUpdate(Resampler *obj, float *data, int dataLen, ResamplerFunc *func, void *context);
+void resamplerUpdateC(Resampler *obj, float complex *data, int dataLen, ResamplerFuncC *func, void *context);
 
 
 
