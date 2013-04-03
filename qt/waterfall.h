@@ -33,7 +33,6 @@
 #include <QColor>
 #include <QPaintEvent>
 #include <QResizeEvent>
-#include <QHoverEvent>
 #include <QDragMoveEvent>
 #include <QMouseEvent>
 #include <QWheelEvent>
@@ -65,11 +64,13 @@ public:
         image = QPixmap(width(), height());
         for (int i=0 ; i<256 ; i++)
             palette[i] = QColor::fromHsv(255-i, 255, 255, 255);
-        pbCol = QColor(50, 50, 100, 255); 
-        vfoFreq =     0.0;
-        pbLoOff = -50000.0;
-        pbHiOff =  50000.0;
-        tuneMode = TUNE_NONE;
+        pbCol = QColor(255, 255, 255, 100); 
+        vfoFreq   =      0.0;
+        pbLoOff   = -50000.0;
+        pbHiOff   =  50000.0;
+        hoverMode = TUNE_NONE;
+        tuneMode  = TUNE_NONE;
+        setMouseTracking(true);
         }
         
     virtual ~Waterfall()
@@ -144,55 +145,68 @@ protected:
         image = QPixmap(size.width(), size.height());
         }
 
-    virtual void hoverMoveEvent(QHoverEvent *event)
-        {
-        }
-
     virtual void wheelEvent(QWheelEvent *event)
         {
         }
 
     virtual void mousePressEvent(QMouseEvent *event)
         {
-        TuneMode currMode = getTuneMode(event);
-        //tuneMode = currMode;
-        tuneMode = TUNE_VFO;
+        //very simple
+        tuneMode = hoverMode;
         }
 
     virtual void mouseMoveEvent(QMouseEvent *event)
         {
+        int x = event->pos().x();
+        float freq = xToFreq(x);
+        status("move:%d", x);
         switch (tuneMode)
             {
             case TUNE_LO:
                 {
+                float off = freq - vfoFreq;
+                if (off < pbHiOff)
+                    {
+                    pbLoOff = off;
+                    update();
+                    }
                 break;
                 }
             case TUNE_VFO:
-                {       
-                int x = event->pos().x();
+                {
                 setVfoFreq(xToFreq(x));
                 break;
                 }
             case TUNE_HI:
                 {       
+                float off = freq - vfoFreq;
+                if (off > pbLoOff)
+                    {
+                    pbHiOff = off;
+                    update();
+                    }
                 break;
                 }
             default:
                 {
                 TuneMode currMode = getTuneMode(event);
-                switch (currMode)
+                if (currMode == hoverMode)
+                    return;
+                trace("mode:%d", hoverMode);
+                hoverMode = currMode;
+                switch (hoverMode)
                     {
                     case TUNE_LO : 
-                        QCursor::setShape(Qt::SizeHorCursor);
+                        setCursor(Qt::SizeHorCursor);
                         break;
                     case TUNE_VFO : 
-                        QCursor::setShape(Qt::SizeAllCursor);
+                        setCursor(Qt::SizeAllCursor);
                         break;
                     case TUNE_HI : 
-                        QCursor::setShape(Qt::SizeHorCursor);
+                        setCursor(Qt::SizeHorCursor);
                         break;
                     default : 
-                        QCursor::setShape(Qt::ArrowCursor);
+                        setCursor(Qt::ArrowCursor);
                     }
                 }
             }
@@ -209,7 +223,18 @@ private:
 
     TuneMode getTuneMode(QMouseEvent *event)
         {
-        return TUNE_NONE;
+        int x = event->x();
+        int pbLoX = freqToX(vfoFreq + pbLoOff);
+        int vfoX  = freqToX(vfoFreq);
+        int pbHiX = freqToX(vfoFreq + pbHiOff);
+        if (x >= vfoX-3 && x <= vfoX+3)
+            return TUNE_VFO;
+        else if (x >= pbLoX-3 && x <= pbLoX+3)
+            return TUNE_LO;
+        else if (x >= pbHiX-3 && x <= pbHiX+3)
+            return TUNE_HI;
+        else
+            return TUNE_NONE;
         }
 
     float xToFreq(int x)
@@ -269,7 +294,8 @@ private:
     double vfoFreq;
     double pbLoOff;
     double pbHiOff;
-    TuneMode tuneMode; 
+    TuneMode hoverMode;
+    TuneMode tuneMode;
     bool dragging;
 };
 
