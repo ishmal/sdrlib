@@ -34,6 +34,7 @@
 #include "device.h"
 #include "fft.h"
 #include "filter.h"
+#include "samplerate.h"
 #include "vfo.h"
 
 #include "private.h"
