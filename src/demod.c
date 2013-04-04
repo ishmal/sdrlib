@@ -42,9 +42,7 @@ static void amDemodulate(Demodulator *dem, float complex *data, int size, DemodO
         if (bufPtr >= DEMOD_BUFSIZE)
             {
             int allocSize = bufPtr * sizeof(float);
-            float *audiobuf = (float *)malloc(allocSize);
-            memcpy(audiobuf, buf, allocSize);
-            func(audiobuf, bufPtr, context); 
+            func(buf, bufPtr, context); 
             bufPtr = 0;
             }
         }
@@ -79,9 +77,7 @@ static void fmDemodulate(Demodulator *dem, float complex *data, int size, DemodO
         if (bufPtr >= DEMOD_BUFSIZE)
             {
             int allocSize = bufPtr * sizeof(float);
-            float *audiobuf = (float *)malloc(allocSize);
-            memcpy(audiobuf, buf, allocSize);
-            func(audiobuf, bufPtr, context); 
+            func(buf, bufPtr, context); 
             bufPtr = 0;
             }
         }

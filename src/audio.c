@@ -123,7 +123,10 @@ Audio *audioCreate()
  */
 int audioPlay(Audio *audio, float *data, int size)
 {
-    queuePush(audio->queue, data, size);
+    int allocSize = size * sizeof(float);
+    float *buf = (float *)malloc(allocSize);
+    memcpy(buf, data, allocSize);
+    queuePush(audio->queue, buf, size);
     return TRUE;
 }
 

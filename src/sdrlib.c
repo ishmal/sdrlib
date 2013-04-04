@@ -267,7 +267,6 @@ static void resamplerOutput(float *buf, int size, void *ctx)
 }
 
 
-
 static void demodOutput(float *buf, int size, void *ctx)
 {
     SdrLib *sdr = (SdrLib *)ctx;
