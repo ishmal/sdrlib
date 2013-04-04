@@ -41,7 +41,6 @@ static void amDemodulate(Demodulator *dem, float complex *data, int size, DemodO
         buf[bufPtr++] = cabsf(prod);
         if (bufPtr >= DEMOD_BUFSIZE)
             {
-            int allocSize = bufPtr * sizeof(float);
             func(buf, bufPtr, context); 
             bufPtr = 0;
             }
@@ -76,7 +75,6 @@ static void fmDemodulate(Demodulator *dem, float complex *data, int size, DemodO
         buf[bufPtr++] = v;
         if (bufPtr >= DEMOD_BUFSIZE)
             {
-            int allocSize = bufPtr * sizeof(float);
             func(buf, bufPtr, context); 
             bufPtr = 0;
             }

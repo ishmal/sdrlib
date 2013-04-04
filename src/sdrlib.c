@@ -170,6 +170,7 @@ void sdrSetDdcFreqs(SdrLib *sdr, float vfoFreq, float pbLoOff, float pbHiOff)
 {
     ddcSetFreqs(sdr->ddc, vfoFreq, pbLoOff, pbHiOff);
     float rate = ddcGetOutRate(sdr->ddc);
+    trace("if rate: %f", rate);
     resamplerSetInRate(sdr->resampler, rate);
 }
 
