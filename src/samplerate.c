@@ -169,6 +169,15 @@ Ddc *ddcCreate(int size, float vfoFreq, float pbLoOff, float pbHiOff, float samp
     return obj;
 }
 
+void ddcDelete(Ddc *obj)
+{
+    if (obj)
+        {
+        free(obj->delayLine);
+        free(obj->coeffs);
+        free(obj);
+        }
+}
 
 void ddcSetFreqs(Ddc *obj, float vfoFreq, float pbLoOff, float pbHiOff)
 {
@@ -182,14 +191,9 @@ void ddcSetFreqs(Ddc *obj, float vfoFreq, float pbLoOff, float pbHiOff)
 }
 
 
-void ddcDelete(Ddc *obj)
+float ddcGetOutRate(Ddc *obj)
 {
-    if (obj)
-        {
-        free(obj->delayLine);
-        free(obj->coeffs);
-        free(obj);
-        }
+    return obj->outRate;
 }
 
 void ddcUpdate(Ddc *obj, float complex *data, int dataLen, DdcFunc *func, void *context)
@@ -243,7 +247,7 @@ void ddcUpdate(Ddc *obj, float complex *data, int dataLen, DdcFunc *func, void *
 
 
 //########################################################################
-//#  D E C I M A T O R
+//#  R E S A M P L E R
 //########################################################################
 
 
@@ -263,6 +267,8 @@ Resampler *resamplerCreate(int size, float inRate, float outRate)
         obj->delayLineC[i] = 0;
         }
     obj->delayIndex = 0;
+    obj->inRate = inRate;
+    obj->outRate = outRate;
     obj->updown = (outRate > inRate);
     obj->ratio = (obj->updown) ? inRate/outRate : outRate/inRate;
     obj->acc = 0.0;
@@ -281,6 +287,24 @@ void resamplerDelete(Resampler *obj)
         free(obj);
         }
 }
+
+
+void resamplerSetInRate(Resampler *obj, float inRate)
+{
+    float outRate = obj->outRate;
+    obj->inRate = inRate;
+    obj->updown = (outRate > inRate);
+    obj->ratio  = (obj->updown) ? inRate/outRate : outRate/inRate;
+}
+
+void resamplerSetOutRate(Resampler *obj, float outRate)
+{
+    float inRate = obj->inRate;
+    obj->outRate = outRate;
+    obj->updown = (outRate > inRate);
+    obj->ratio  = (obj->updown) ? inRate/outRate : outRate/inRate;
+}
+
 
 void resamplerUpdate(Resampler *obj, float *data, int dataLen, ResamplerFunc *func, void *context)
 {

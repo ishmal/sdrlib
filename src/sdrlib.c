@@ -169,6 +169,8 @@ int sdrSetCenterFrequency(SdrLib *sdr, double freq)
 void sdrSetDdcFreqs(SdrLib *sdr, float vfoFreq, float pbLoOff, float pbHiOff)
 {
     ddcSetFreqs(sdr->ddc, vfoFreq, pbLoOff, pbHiOff);
+    float rate = ddcGetOutRate(sdr->ddc);
+    resamplerSetInRate(sdr->resampler, rate);
 }
 
 

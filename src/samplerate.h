@@ -38,8 +38,14 @@
 //########################################################################
 
 
+/**
+ *
+ */
 #define DECIMATOR_BUFSIZE (16384)
 
+/**
+ *
+ */
 struct Decimator
 {
     int size;
@@ -52,14 +58,29 @@ struct Decimator
     int bufPtr;
 };
 
+/**
+ *
+ */
 Decimator *decimatorCreate(int size, float highRate, float lowRate);
 
+/**
+ *
+ */
 void decimatorDelete(Decimator *dec);
 
+/**
+ *
+ */
 void decimatorSetRates(Decimator *dec, float highRate, float lowRate);
 
+/**
+ *
+ */
 typedef void DecimatorFunc(float complex *data, int size, void *context);
 
+/**
+ *
+ */
 void decimatorUpdate(Decimator *dec, float complex *data, int dataLen, DecimatorFunc *func, void *context);
 
 
@@ -68,9 +89,15 @@ void decimatorUpdate(Decimator *dec, float complex *data, int dataLen, Decimator
 //########################################################################
 
 
+/**
+ *
+ */
 #define DDC_BUFSIZE (16384)
 
 
+/**
+ *
+ */
 struct Ddc
 {
     int   size;
@@ -87,14 +114,34 @@ struct Ddc
     int   bufPtr;
 };
 
+/**
+ *
+ */
 Ddc *ddcCreate(int size, float vfoFreq, float pbLoOff, float pbHiOff, float sampleRate);
 
+/**
+ *
+ */
 void ddcDelete(Ddc *obj);
 
+/**
+ *
+ */
+float ddcGetOutRate(Ddc *obj);
+
+/**
+ *
+ */
 void ddcSetFreqs(Ddc *obj, float vfoFreq, float pbLoOff, float pbHiOff);
 
+/**
+ *
+ */
 typedef void DdcFunc(float complex *data, int size, void *context);
 
+/**
+ *
+ */
 void ddcUpdate(Ddc *obj, float complex *data, int dataLen, DdcFunc *func, void *context);
 
 
@@ -104,16 +151,24 @@ void ddcUpdate(Ddc *obj, float complex *data, int dataLen, DdcFunc *func, void *
 //########################################################################
 
 
+/**
+ *
+ */
 #define RESAMPLER_BUFSIZE (16384)
 
 
 
+/**
+ *
+ */
 struct Resampler
 {
     int size;
     float *coeffs;
     float *delayLine;
     float complex *delayLineC;
+    float inRate;
+    float outRate;
     int delayIndex;
     float ratio;
     int updown;
@@ -123,14 +178,44 @@ struct Resampler
     int bufPtr;
 };
 
+/**
+ *
+ */
 Resampler *resamplerCreate(int size, float highRate, float lowRate);
 
+/**
+ *
+ */
 void resamplerDelete(Resampler *obj);
 
+/**
+ *
+ */
+void resamplerSetInRate(Resampler *obj, float inRate);
+
+/**
+ *
+ */
+void resamplerSetOutRate(Resampler *obj, float outRate);
+
+/**
+ *
+ */
 typedef void ResamplerFunc(float *data, int size, void *context);
+
+/**
+ *
+ */
 typedef void ResamplerFuncC(float complex *data, int size, void *context);
 
+/**
+ *
+ */
 void resamplerUpdate(Resampler *obj, float *data, int dataLen, ResamplerFunc *func, void *context);
+
+/**
+ *
+ */
 void resamplerUpdateC(Resampler *obj, float complex *data, int dataLen, ResamplerFuncC *func, void *context);
 
 
