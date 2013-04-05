@@ -47,14 +47,14 @@ static void firLPCoeffs(int size, float *coeffs, float cutoffFreq, float sampleR
 
 static void firBPCoeffs(int size, float *coeffs, float loCutoffFreq, float hiCutoffFreq, float sampleRate)
 {
-    float omega1 = 2.0 * PI * loCutoffFreq / sampleRate;
-    float omega2 = 2.0 * PI * hiCutoffFreq / sampleRate;
+    float omega1 = TWOPI * loCutoffFreq / sampleRate;
+    float omega2 = TWOPI * hiCutoffFreq / sampleRate;
     int center = (size - 1) / 2;
     int idx = 0;
     for ( ; idx < size ; idx++)
         {
         int i = idx - center;
-        coeffs[idx] = (i == center) ? 
+        coeffs[idx] = (i == 0) ? 
             1.0 - (omega2-omega1) / PI :
             (sin(omega1*i) - sin(omega2 * i)) / (PI * i);
         }
@@ -228,6 +228,7 @@ void ddcUpdate(Ddc *obj, float complex *data, int dataLen, DdcFunc *func, void *
                 idx -= 1;
                 if (idx < 0)
                     idx = size - 1;
+                //trace("coeff:%f",*coeff);
                 sum += v * (*coeff++);
                 }
             //trace("sum:%f", sum * 1000.0);

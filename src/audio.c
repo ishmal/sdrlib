@@ -53,7 +53,7 @@ static int paCallback(const void *inputBuffer, void *outputBuffer,
     while (framesPerBuffer--)
         {
         float v = (*in++) * gain;
-        trace("v:%f",v);
+        //trace("v:%f",v);
         *out++ = v;
         *out++ = v;
         }

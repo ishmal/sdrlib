@@ -211,7 +211,7 @@ static void firHPCoeffs(int size, float *coeffs, float cutoffFreq, float sampleR
     for ( ; idx < size ; idx++)
         {
         int i = idx - center;
-        coeffs[idx] = (i == center) ? 1.0 - omega / PI : -sin(omega * i) / (PI * i);
+        coeffs[idx] = (i == 0) ? 1.0 - omega / PI : -sin(omega * i) / (PI * i);
         }
 }
 
@@ -234,7 +234,7 @@ static void firBPCoeffs(int size, float *coeffs, float loCutoffFreq, float hiCut
     for ( ; idx < size ; idx++)
         {
         int i = idx - center;
-        coeffs[idx] = (i == center) ? 
+        coeffs[idx] = (i == 0) ? 
             1.0 - (omega2-omega1) / PI :
             (sin(omega1*i) - sin(omega2 * i)) / (PI * i);
         }

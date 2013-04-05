@@ -72,6 +72,7 @@ static void fmDemodulate(Demodulator *dem, float complex *data, int size, DemodO
         float complex prod = cpx * conj(lastVal);
         lastVal = cpx;
         float v = cabsf(prod);
+        //trace("v:%f",v);
         buf[bufPtr++] = v;
         if (bufPtr >= DEMOD_BUFSIZE)
             {
