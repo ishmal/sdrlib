@@ -28,38 +28,12 @@
 #include <string.h>
 #include <stdlib.h>
 #include <ctype.h>
+
 #include <sdrlib.h>
 
 #define BUFLEN 256
 
-
 #include "private.h"
-
-#ifdef WIN32
-
-static char* strtok_r(char *str, char *delim, char **nextp)
-{
-    if (str == NULL)
-        str = *nextp;
-
-    str += strspn(str, delim);
-
-    if (*str == '\0')
-        return NULL;
-
-    char *ret = str;
-
-    str += strcspn(str, delim);
-
-    if (*str)
-        *str++ = '\0';
-
-    *nextp = str;
-
-    return ret;
-}
-
-#endif
 
 
 static int equ(char *a, char *b)
