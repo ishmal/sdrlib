@@ -52,8 +52,11 @@ struct Demodulator
 
 
 
+Demodulator *demodNullCreate();
 Demodulator *demodAmCreate();
 Demodulator *demodFmCreate();
+Demodulator *demodLsbCreate();
+Demodulator *demodUsbCreate();
 void demodDelete(Demodulator *dem);
 
 

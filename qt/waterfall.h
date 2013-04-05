@@ -251,7 +251,7 @@ private:
         int pbLoX = freqToX(vfoFreq + pbLoOff);
         int vfoX  = freqToX(vfoFreq);
         int pbHiX = freqToX(vfoFreq + pbHiOff);
-        if (x >= vfoX-3 && x <= vfoX+3)
+        if (x >= vfoX-4 && x <= vfoX+4)
             return TUNE_VFO;
         else if (x >= pbLoX-3 && x <= pbLoX+3)
             return TUNE_LO;

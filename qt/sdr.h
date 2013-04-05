@@ -101,27 +101,34 @@ public slots:
     void setDdcFreqs(float vfoFreq, float pbLoOff, float pbHiOff)
         {
         sdrSetDdcFreqs(sdr, vfoFreq, pbLoOff, pbHiOff);
+        status("ddc: %f %f %f", vfoFreq, pbLoOff, pbHiOff);
         }
     
     void startStop()
         {
         if (ui.startStopBtn->isChecked())
+            {
             sdrStart(sdr);
+            status("start");
+            }
         else
+            {
             sdrStop(sdr);
+            status("stop");
+            }
         }
 
     void adjustRfGain(int gain)
         {
         float fgain = ((float)gain) / 100.0;
-        status("gain:%f", fgain);
+        status("rf gain:%f", fgain);
         sdrSetRfGain(sdr, fgain);
         }
 
     void adjustAfGain(int gain)
         {
         float fgain = ((float)gain) / 100.0;
-        status("gain:%f", fgain);
+        status("af gain:%f", fgain);
         sdrSetAfGain(sdr, fgain);
         }
 
@@ -134,21 +141,25 @@ public slots:
     void modeAm(bool val)
         {
         status("am:%d", val);
+        sdrSetMode(sdr, MODE_AM);
         }
 
     void modeFm(bool val)
         {
         status("fm:%d", val);
+        sdrSetMode(sdr, MODE_FM);
         }
 
     void modeLsb(bool val)
         {
         status("lsb:%d", val);
+        sdrSetMode(sdr, MODE_LSB);
         }
 
     void modeUsb(bool val)
         {
         status("usb:%d", val);
+        sdrSetMode(sdr, MODE_USB);
         }
 
 

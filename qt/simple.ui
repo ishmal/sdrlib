@@ -130,6 +130,9 @@
      <property name="text">
       <string>FM</string>
      </property>
+     <property name="checked">
+      <bool>true</bool>
+     </property>
     </widget>
     <widget class="QRadioButton" name="lsbButton">
      <property name="geometry">
@@ -184,7 +187,7 @@
      <x>0</x>
      <y>0</y>
      <width>932</width>
-     <height>21</height>
+     <height>22</height>
     </rect>
    </property>
    <widget class="QMenu" name="menuDevice">
@@ -339,7 +342,7 @@
    <sender>rfGainSlider</sender>
    <signal>valueChanged(int)</signal>
    <receiver>MainWindow</receiver>
-   <slot>adjustAfGain(int)</slot>
+   <slot>adjustRfGain(int)</slot>
    <hints>
     <hint type="sourcelabel">
      <x>709</x>

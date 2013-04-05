@@ -58,6 +58,15 @@ typedef struct Queue       Queue;
 typedef struct Vfo         Vfo; 
 
 
+typedef enum
+{
+    MODE_NULL=0,
+    MODE_AM,
+    MODE_FM,
+    MODE_LSB,
+    MODE_USB
+} Mode;
+
 /**
  * Our main context
  */
@@ -74,9 +83,13 @@ typedef struct
     //Vfo *vfo;
     //Fir *bpf;
     Ddc *ddc;
+    Mode mode;
     Demodulator *demod;
+    Demodulator *demodNull;
     Demodulator *demodAm;
     Demodulator *demodFm;
+    Demodulator *demodLsb;
+    Demodulator *demodUsb;
     Resampler   *resampler;
     Audio *audio;
 } SdrLib;
@@ -173,6 +186,21 @@ float sdrGetAfGain(SdrLib *sdrlib);
  * @param sdrlib an SDRLib instance.
  */   
 int sdrSetAfGain(SdrLib *sdrlib, float gain);
+
+
+/**
+ * Get current demodulation Mode
+ * @param sdrlib an SDRLib instance.
+ */   
+int sdrGetMode(SdrLib *sdrlib);
+
+
+
+/**
+ * Set current demodulation Mode
+ * @param sdrlib an SDRLib instance.
+ */   
+int sdrSetMode(SdrLib *sdrlib, Mode mode);
 
 
 

@@ -38,28 +38,7 @@
 
 
 
-static int paCallback(const void *inputBuffer, void *outputBuffer,
-                      unsigned long framesPerBuffer,
-                      const PaStreamCallbackTimeInfo* timeInfo,
-                      PaStreamCallbackFlags statusFlags,
-                      void *userData)
-{
-    Audio *audio = (Audio *) userData;
-    float gain = audio->gain;
-    int size;
-    float *inbuf = queuePop(audio->queue, &size);
-    float *in = inbuf;
-    float *out = (float *)outputBuffer;
-    while (framesPerBuffer--)
-        {
-        float v = (*in++) * gain;
-        //trace("v:%f",v);
-        *out++ = v;
-        *out++ = v;
-        }
-    free(inbuf);
-    return paContinue;
-}
+static PaStreamCallback paCallback;
 
 
 /**
@@ -72,7 +51,7 @@ Audio *audioCreate()
     if (!audio)
         return audio;
     audio->sampleRate = (float)SAMPLE_RATE;
-    audio->gain = 1000.0;
+    audio->gain = 1.0;
     audio->queue = queueCreate(1024);
 
     int err = Pa_Initialize();
@@ -119,17 +98,6 @@ Audio *audioCreate()
 }
 
 
-/**
- *
- */
-int audioPlay(Audio *audio, float *data, int size)
-{
-    int allocSize = size * sizeof(float);
-    float *buf = (float *)malloc(allocSize);
-    memcpy(buf, data, allocSize);
-    queuePush(audio->queue, buf, size);
-    return TRUE;
-}
 
 /**
  * Delete an Audio instance, stopping
@@ -161,7 +129,7 @@ void audioDelete(Audio *audio)
  */
 float audioGetGain(Audio *audio)
 {
-    return audio->gain * 0.001;
+    return audio->gain;
 }
 
 /**
@@ -169,7 +137,52 @@ float audioGetGain(Audio *audio)
  */
 int audioSetGain(Audio *audio, float gain)
 {
-    audio->gain = gain * 1000.0;
+    audio->gain = gain;
     return TRUE;
 }
+
+
+
+/**
+ * Called by PortAudio when the output stream needs more data
+ */
+static int paCallback(const void *inputBuffer, void *outputBuffer,
+                      unsigned long framesPerBuffer,
+                      const PaStreamCallbackTimeInfo* timeInfo,
+                      PaStreamCallbackFlags statusFlags,
+                      void *userData)
+{
+    Audio *audio = (Audio *) userData;
+    float gain = audio->gain;
+    int size;
+    float *inbuf = queuePop(audio->queue, &size);
+    float *in = inbuf;
+    float *out = (float *)outputBuffer;
+    while (framesPerBuffer--)
+        {
+        float v = (*in++) * gain;
+        //trace("v:%f",v);
+        *out++ = v;
+        *out++ = v;
+        }
+    free(inbuf);
+    return paContinue;
+}
+
+
+/**
+ * Queue up data to be read by paCallback
+ */
+int audioPlay(Audio *audio, float *data, int size)
+{
+    int allocSize = size * sizeof(float);
+    float *buf = (float *)malloc(allocSize);
+    memcpy(buf, data, allocSize);
+    queuePush(audio->queue, buf, size);
+    return TRUE;
+}
+
+
+
+
 

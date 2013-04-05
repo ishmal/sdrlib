@@ -42,6 +42,11 @@
 
 static void *sdrReaderThread(void *ctx);
 
+static void defaultPowerSpectrumCallback(unsigned int *ps, int size, void *ctx)
+{
+    //nothing here.  dummy function
+}
+
 
 /**
  */  
@@ -55,15 +60,19 @@ SdrLib *sdrCreate()
         error("No devices found");
         //but dont fail. wait until start()
         }
-    sdr->fft = fftCreate(16384);
-    //sdr->vfo = vfoCreate(0.0, 2048000.0);
-    //sdr->bpf = firBP(11, -50000.0, 50000.0, 2048000.0, W_HAMMING);
-    sdr->ddc = ddcCreate(11, 0.0, -5000.0, 5000.0, 2048000.0);
-    sdr->demodFm = demodFmCreate();
-    sdr->demodAm = demodAmCreate();
-    sdr->demod = sdr->demodFm;
-    sdr->resampler  = resamplerCreate(11, 44100.0, 44100.0);
-    sdr->audio = audioCreate();
+    sdr->fft       = fftCreate(16384);
+    sdr->psFunc    = defaultPowerSpectrumCallback;
+    sdr->psFuncCtx = sdr;
+    sdr->ddc       = ddcCreate(21, 0.0, -5000.0, 5000.0, 2048000.0);
+    sdr->demodNull = demodNullCreate();
+    sdr->demodFm   = demodFmCreate();
+    sdr->demodAm   = demodAmCreate();
+    sdr->demodLsb  = demodLsbCreate();
+    sdr->demodUsb  = demodUsbCreate();
+    sdr->demod     = sdr->demodFm;
+    sdr->mode      = MODE_FM;
+    sdr->resampler = resamplerCreate(21, 44100.0, 44100.0);
+    sdr->audio     = audioCreate();
     return sdr;
 }
 
@@ -86,6 +95,8 @@ int sdrDelete(SdrLib *sdr)
     ddcDelete(sdr->ddc);
     demodDelete(sdr->demodFm);
     demodDelete(sdr->demodAm);
+    demodDelete(sdr->demodLsb);
+    demodDelete(sdr->demodUsb);
     resamplerDelete(sdr->resampler);
     free(sdr);
     return TRUE;
@@ -233,12 +244,55 @@ int sdrSetAfGain(SdrLib *sdr, float gain)
 }
 
 
+/**
+ * Get current demodulation Mode
+ * @param sdrlib an SDRLib instance.
+ */   
+int sdrGetMode(SdrLib *sdr)
+{
+    return sdr->mode;
+}
+
+
+
+/**
+ * Set current demodulation Mode
+ * @param sdrlib an SDRLib instance.
+ */   
+int sdrSetMode(SdrLib *sdr, Mode mode)
+{
+    int ret = TRUE;
+    switch (mode)
+        {
+        case MODE_NULL:
+            sdr->demod = sdr->demodNull;
+            break;
+        case MODE_AM:
+            sdr->demod = sdr->demodAm;
+            break;
+        case MODE_FM:
+            sdr->demod = sdr->demodFm;
+            break;
+        case MODE_LSB:
+            sdr->demod = sdr->demodLsb;
+            break;
+        case MODE_USB:
+            sdr->demod = sdr->demodUsb;
+            break;
+        default:
+            error("Unhandled mode: %d", mode);
+            ret = FALSE;
+        }
+    return ret;
+}
+
+
 
 /**
  */   
 void sdrSetPowerSpectrumFunc(SdrLib *sdr, PowerSpectrumFunc *func, void *ctx)
 {
-    sdr->psFunc = func;
+    sdr->psFunc = (func) ? func : defaultPowerSpectrumCallback;
     sdr->psFuncCtx = ctx;
 }
 
@@ -255,8 +309,7 @@ static void fftOutput(unsigned int *vals, int size, void *ctx)
 {
     SdrLib *sdr = (SdrLib *)ctx;
     PowerSpectrumFunc *psFunc = sdr->psFunc;
-    void *psFuncCtx = sdr->psFuncCtx;
-    if (psFunc) (*psFunc)(vals, size, psFuncCtx);
+    (*(sdr->psFunc))(vals, size, sdr->psFuncCtx);
 }
 
 

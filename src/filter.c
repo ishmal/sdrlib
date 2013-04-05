@@ -195,6 +195,8 @@ static void firLPCoeffs(int size, float *coeffs, float cutoffFreq, float sampleR
 
 Fir *firLP(int size, float cutoffFreq, float sampleRate, int windowType)
 {
+    //FIR sizes must be odd
+    size |= 1;
     Fir *fir = firCreate(size);
     firLPCoeffs(size, fir->coeffs, cutoffFreq, sampleRate);
     windowize(size, fir->coeffs, windowType);
@@ -217,6 +219,8 @@ static void firHPCoeffs(int size, float *coeffs, float cutoffFreq, float sampleR
 
 Fir *firHP(int size, float cutoffFreq, float sampleRate, int windowType)
 {
+    //FIR sizes must be odd
+    size |= 1;
     Fir *fir = firCreate(size);
     firHPCoeffs(size, fir->coeffs, cutoffFreq, sampleRate);
     windowize(size, fir->coeffs, windowType);
@@ -242,6 +246,8 @@ static void firBPCoeffs(int size, float *coeffs, float loCutoffFreq, float hiCut
 
 Fir *firBP(int size, float loCutoffFreq, float hiCutoffFreq, float sampleRate, int windowType)
 {
+    //FIR sizes must be odd
+    size |= 1;
     Fir *fir = firCreate(size);
     firBPCoeffs(size, fir->coeffs, loCutoffFreq, hiCutoffFreq, sampleRate);
     windowize(size, fir->coeffs, windowType);

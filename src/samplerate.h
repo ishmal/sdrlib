@@ -107,8 +107,8 @@ struct Ddc
     float ratio;
     float inRate;
     float outRate;
-    float complex phase;
-    float complex freq;
+    float complex vfoPhase;
+    float complex vfoFreq;
     float acc;
     float complex buf[DECIMATOR_BUFSIZE];
     int   bufPtr;

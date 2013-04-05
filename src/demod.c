@@ -29,6 +29,20 @@
 #include "private.h"
 
 
+static void nullDemodulate(Demodulator *dem, float complex *data, int size, DemodOutputFunc *func, void *context)
+{
+}
+
+
+Demodulator *demodNullCreate()
+{
+    Demodulator *dem = (Demodulator *)smalloc(sizeof(Demodulator));
+    if (!dem)
+        return NULL;
+    dem->update  = nullDemodulate;
+    return dem;
+}
+
 static void amDemodulate(Demodulator *dem, float complex *data, int size, DemodOutputFunc *func, void *context)
 {
     int bufPtr = dem->bufPtr;
@@ -36,9 +50,12 @@ static void amDemodulate(Demodulator *dem, float complex *data, int size, DemodO
     float complex lastVal = dem->lastVal;
     while (size--)
         {
-        float complex prod = *data * conj(lastVal);
-        lastVal = *data++;
-        buf[bufPtr++] = cabsf(prod);
+        float complex cpx = *data++;
+        float complex prod = cpx * conj(lastVal);
+        lastVal = cpx;
+        float v = cabsf(prod);
+        //trace("v:%f",v);
+        buf[bufPtr++] = v;
         if (bufPtr >= DEMOD_BUFSIZE)
             {
             func(buf, bufPtr, context); 
@@ -71,6 +88,49 @@ static void fmDemodulate(Demodulator *dem, float complex *data, int size, DemodO
         float complex cpx = *data++;
         float complex prod = cpx * conj(lastVal);
         lastVal = cpx;
+        
+        // limit (remove the amplitude variations)
+        float m = cabsf(prod);
+        if (m > 0.0)
+            prod /= m;
+            
+        //get the angle
+        float v = cargf(prod);
+        
+        //trace("v:%f",v);
+        buf[bufPtr++] = v;
+        if (bufPtr >= DEMOD_BUFSIZE)
+            {
+            func(buf, bufPtr, context); 
+            bufPtr = 0;
+            }
+        }
+    dem->lastVal = lastVal;
+    dem->bufPtr  = bufPtr;
+}
+
+                
+Demodulator *demodFmCreate()
+{
+    Demodulator *dem = (Demodulator *)smalloc(sizeof(Demodulator));
+    if (!dem)
+        return NULL;
+    dem->bufPtr  = 0;
+    dem->lastVal = 0;
+    dem->update  = fmDemodulate;
+    return dem;
+}
+
+static void lsbDemodulate(Demodulator *dem, float complex *data, int size, DemodOutputFunc *func, void *context)
+{
+    int bufPtr = dem->bufPtr;
+    float *buf = dem->outBuf;
+    float complex lastVal = dem->lastVal;
+    while (size--)
+        {
+        float complex cpx = *data++;
+        float complex prod = cpx * conj(lastVal);
+        lastVal = cpx;
         float v = cabsf(prod);
         //trace("v:%f",v);
         buf[bufPtr++] = v;
@@ -85,14 +145,49 @@ static void fmDemodulate(Demodulator *dem, float complex *data, int size, DemodO
 }
 
 
-Demodulator *demodFmCreate()
+Demodulator *demodLsbCreate()
 {
     Demodulator *dem = (Demodulator *)smalloc(sizeof(Demodulator));
     if (!dem)
         return NULL;
     dem->bufPtr  = 0;
     dem->lastVal = 0;
-    dem->update  = fmDemodulate;
+    dem->update  = lsbDemodulate;
+    return dem;
+}
+
+static void usbDemodulate(Demodulator *dem, float complex *data, int size, DemodOutputFunc *func, void *context)
+{
+    int bufPtr = dem->bufPtr;
+    float *buf = dem->outBuf;
+    float complex lastVal = dem->lastVal;
+    while (size--)
+        {
+        float complex cpx = *data++;
+        float complex prod = cpx * conj(lastVal);
+        lastVal = cpx;
+        float v = cabsf(prod);
+        //trace("v:%f",v);
+        buf[bufPtr++] = v;
+        if (bufPtr >= DEMOD_BUFSIZE)
+            {
+            func(buf, bufPtr, context); 
+            bufPtr = 0;
+            }
+        }
+    dem->lastVal = lastVal;
+    dem->bufPtr  = bufPtr;
+}
+
+
+Demodulator *demodUsbCreate()
+{
+    Demodulator *dem = (Demodulator *)smalloc(sizeof(Demodulator));
+    if (!dem)
+        return NULL;
+    dem->bufPtr  = 0;
+    dem->lastVal = 0;
+    dem->update  = usbDemodulate;
     return dem;
 }
 

@@ -67,6 +67,8 @@ static void firBPCoeffs(int size, float *coeffs, float loCutoffFreq, float hiCut
 Decimator *decimatorCreate(int size, float highRate, float lowRate)
 {
     Decimator *dec = (Decimator *)malloc(sizeof(Decimator));
+    //FIR sizes must be odd
+    size |= 1;
     dec->size = size;
     dec->coeffs = (float *)malloc(size * sizeof(float));
     decimatorSetRates(dec, highRate, lowRate);
@@ -155,17 +157,19 @@ void decimatorUpdate(Decimator *dec, float complex *data, int dataLen, Decimator
 Ddc *ddcCreate(int size, float vfoFreq, float pbLoOff, float pbHiOff, float sampleRate)
 {
     Ddc *obj = (Ddc *)malloc(sizeof(Ddc));
+    //FIR sizes must be odd
+    size |= 1;
     obj->size = size;
     obj->coeffs = (float *)malloc(size * sizeof(float));
     obj->inRate = sampleRate;
     ddcSetFreqs(obj, vfoFreq, pbLoOff, pbHiOff);
     int delayLineSize = size * sizeof(float complex);
-    obj->delayLine = (float complex *)malloc(delayLineSize);
+    obj->delayLine  = (float complex *)malloc(delayLineSize);
     memset(obj->delayLine, 0, delayLineSize);
     obj->delayIndex = 0;
-    obj->acc = 0.0;
-    obj->bufPtr = 0;
-    obj->phase = 0.0 + I * 1.0;
+    obj->acc        = -1.0;
+    obj->bufPtr     = 0;
+    obj->vfoPhase   = 0.0 + I * 1.0;
     return obj;
 }
 
@@ -181,13 +185,13 @@ void ddcDelete(Ddc *obj)
 
 void ddcSetFreqs(Ddc *obj, float vfoFreq, float pbLoOff, float pbHiOff)
 {
-    float loFreq = vfoFreq+pbLoOff;
-    float hiFreq = vfoFreq+pbHiOff;
+    float loFreq = pbLoOff; // +vfoFreq;
+    float hiFreq = pbHiOff; // +vfoFreq;
     firBPCoeffs(obj->size, obj->coeffs, loFreq, hiFreq, obj->inRate);
-    obj->outRate = (hiFreq - loFreq) * 1.5;
+    obj->outRate = (hiFreq - loFreq) * 1.25;
     obj->ratio = obj->outRate/obj->inRate;
     float angle = TWOPI * vfoFreq / obj->inRate;
-    obj->freq = cos(angle) + I * sin(angle);
+    obj->vfoFreq = cos(angle) + I * sin(angle);
 }
 
 
@@ -196,6 +200,37 @@ float ddcGetOutRate(Ddc *obj)
     return obj->outRate;
 }
 
+
+
+/**
+ * Downmix, downsample, and bandpass the input stream of sample, all in one go.
+ *
+ * For each data sample:
+ *
+ * 1.  Advance the VFO phase and convolve it with the sample
+ * 2.  Increment the accumulator with the ratio until it is >= 0. then process a sample
+ *     Example:  say the input rate is 1Ms/s and the desired output is 100ks/s.  Then the
+ *     ratio is 0.1, and the decimation rate is 10.   The accumulator starts at -1. 
+ *     We increment the accumulator 10 times with 0.1 until it reaches 0.0.  We reset the
+ *     accumulator and process the sample.
+ * 3.  Process the sample with the FIR bandbass coefficients,  with  the coefficients
+ *     first to last, and the samples in the delay line in reverse going from most recent.
+ * 4.  Add the sample to the output buffer
+ * 5.  When the output buffer is full, call the output function, clear the buffer, and
+ *     continue the loop.
+ *
+ * Re: the VFO
+ * cos(a+b) = cos(a)*cos(b) - sin(a)*sin(b)
+ * sin(a+b) = sin(a)*cos(b) + cos(a)*sin(b)
+ * So, let
+ *  float omega = TWOPI * freq / sampleRate
+ *  float complex vfoFreq = cos(omega) + I * sin(omega);
+ *  float complex  vfoPhase = 0 + I*1;
+ *  for each sample,
+ *     vfoPhase *= vfoFreq
+ *     downshifted = sample * vfoPhase
+ * 
+ */     
 void ddcUpdate(Ddc *obj, float complex *data, int dataLen, DdcFunc *func, void *context)
 {
     int   size         = obj->size;
@@ -207,11 +242,14 @@ void ddcUpdate(Ddc *obj, float complex *data, int dataLen, DdcFunc *func, void *
     float complex *buf = obj->buf;
     int   bufPtr       = obj->bufPtr;
     
-    float complex *cpx = data;
     while (dataLen--)
         {
-        obj->phase *= obj->freq;
-        delayLine[delayIndex] = (*cpx++) * obj->phase;
+        //advance the VFO and convolve the input stream
+        obj->vfoPhase *= obj->vfoFreq;
+        float complex sample = (*data++) * obj->vfoPhase;
+        delayLine[delayIndex] = sample;
+        //perform our fractional decimation
+        //increment the ratio until
         acc += ratio;
         if (acc > 0.0)
             {
@@ -233,7 +271,7 @@ void ddcUpdate(Ddc *obj, float complex *data, int dataLen, DdcFunc *func, void *
                 }
             //trace("sum:%f", sum * 1000.0);
             buf[bufPtr++] = sum;
-            if (bufPtr >= DECIMATOR_BUFSIZE)
+            if (bufPtr >= DDC_BUFSIZE)
                 {
                 func(buf, bufPtr, context);
                 bufPtr = 0;
@@ -256,6 +294,8 @@ void ddcUpdate(Ddc *obj, float complex *data, int dataLen, DdcFunc *func, void *
 Resampler *resamplerCreate(int size, float inRate, float outRate)
 {
     Resampler *obj = (Resampler *)malloc(sizeof(Resampler));
+    //FIR sizes must be odd
+    size |= 1;
     obj->size = size;
     obj->coeffs = (float *)malloc(size * sizeof(float));
     firLPCoeffs(size, obj->coeffs, outRate, inRate);
@@ -330,20 +370,20 @@ void resamplerUpdate(Resampler *obj, float *data, int dataLen, ResamplerFunc *fu
             while (acc < 0.0)
                 {
                 acc += ratio;
-                float complex sum = 0.0;
+                float sum = 0.0;
                 int idx = delayIndex;
                 float *coeff = coeffs; 
                 int c = size;
                 while (c--)
                     {
-                    float complex v = delayLine[idx];
+                    float v = delayLine[idx];
                     idx -= 1;
                     if (idx < 0)
                         idx = size - 1;
                     sum += v * (*coeff++);
                     }
                 buf[bufPtr++] = sum;
-                if (bufPtr >= DECIMATOR_BUFSIZE)
+                if (bufPtr >= RESAMPLER_BUFSIZE)
                     {
                     func(buf, bufPtr, context);
                     bufPtr = 0;
@@ -362,20 +402,20 @@ void resamplerUpdate(Resampler *obj, float *data, int dataLen, ResamplerFunc *fu
             if (acc > 0.0)
                 {
                 acc -= 1.0;
-                float complex sum = 0.0;
+                float sum = 0.0;
                 int idx = delayIndex;
                 float *coeff = coeffs; 
                 int c = size;
                 while (c--)
                     {
-                    float complex v = delayLine[idx];
+                    float v = delayLine[idx];
                     idx -= 1;
                     if (idx < 0)
                         idx = size - 1;
                     sum += v * (*coeff++);
                     }
                 buf[bufPtr++] = sum;
-                if (bufPtr >= DECIMATOR_BUFSIZE)
+                if (bufPtr >= RESAMPLER_BUFSIZE)
                     {
                     func(buf, bufPtr, context);
                     bufPtr = 0;
@@ -426,7 +466,7 @@ void resamplerUpdateC(Resampler *obj, float complex *data, int dataLen, Resample
                     sum += v * (*coeff++);
                     }
                 buf[bufPtr++] = sum;
-                if (bufPtr >= DECIMATOR_BUFSIZE)
+                if (bufPtr >= RESAMPLER_BUFSIZE)
                     {
                     func(buf, bufPtr, context);
                     bufPtr = 0;
@@ -458,7 +498,7 @@ void resamplerUpdateC(Resampler *obj, float complex *data, int dataLen, Resample
                     sum += v * (*coeff++);
                     }
                 buf[bufPtr++] = sum;
-                if (bufPtr >= DECIMATOR_BUFSIZE)
+                if (bufPtr >= RESAMPLER_BUFSIZE)
                     {
                     func(buf, bufPtr, context);
                     bufPtr = 0;

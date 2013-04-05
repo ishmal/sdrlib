@@ -49,7 +49,7 @@ Fft *fftCreate(int N)
     fft->spectrum = (unsigned int *) malloc(psSize * sizeof(unsigned int));
     fft->inPtr = 0;
     fft->skipCounter = 0;
-    fft->threshold = N * 20;
+    fft->threshold = N * 10;
     return fft;
 }
 
