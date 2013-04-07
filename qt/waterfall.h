@@ -31,12 +31,14 @@
 #include <QImage>
 #include <QPixmap>
 #include <QColor>
+#if 0
 #include <QPaintEvent>
 #include <QResizeEvent>
 #include <QDragMoveEvent>
 #include <QMouseEvent>
 #include <QWheelEvent>
 #include <QKeyEvent>
+#endif
 #include <QCursor>
 
 
@@ -71,6 +73,8 @@ public:
         hoverMode = TUNE_NONE;
         tuneMode  = TUNE_NONE;
         setMouseTracking(true);
+        setFocusPolicy(Qt::StrongFocus);
+        zoomLevel = 1;
         }
         
     virtual ~Waterfall()
@@ -80,25 +84,48 @@ public:
     /**
      * Receive a new line of power spectrum data
      */    
-    void updatePs(unsigned int *ps, int size)
+    void updatePs(unsigned int *powerSpectrum, int size)
         {
+        int nrSamples = size / zoomLevel;
+        int startIndex = (size - nrSamples) >> 1;
+        unsigned int *ps = powerSpectrum + startIndex;
         int w = image.width();
         int y = image.height() - 1;
         image.scroll(0, -1, 0, 1, w, y);
         QPainter painter(&image);
-        int acc = -size;
-        for (int x = 0; x < w ; x++)
+        if (nrSamples > w)
             {
-            while (acc < 0)
+            int acc = -nrSamples;
+            for (int x = 0; x < w ; x++)
                 {
-                ps++;
-                acc += w;
+                while (acc < 0)
+                    {
+                    ps++;
+                    acc += w;
+                    }
+                acc -= nrSamples;
+                unsigned int v  = *ps;
+                QColor col = palette[v>>1 & 255];
+                painter.setPen(col);
+                painter.drawPoint(x,y);
                 }
-            acc -= size;
-            unsigned int v  = *ps;
-            QColor col = palette[v>>1 & 255];
-            painter.setPen(col);
-            painter.drawPoint(x,y);
+            }
+        else
+            {
+            int acc = -w;
+            unsigned int v = *ps++;
+            for (int x = 0; x < w ; x++)
+                {
+                acc += nrSamples;
+                if (acc >= 0)
+                    {
+                    v = *ps++;
+                    acc -= w;
+                    }
+                QColor col = palette[v>>1 & 255];
+                painter.setPen(col);
+                painter.drawPoint(x,y);
+                }
             }
         update();
         }
@@ -242,6 +269,29 @@ protected:
         tuneMode = TUNE_NONE;
         }
 
+    virtual void keyPressEvent(QKeyEvent *event)
+        {
+        switch (event->key())
+            {
+            case Qt::Key_Up:
+                if (zoomLevel < 1024)
+                    {
+                    zoomLevel <<= 1;
+                    update();
+                    }
+                break;
+            case Qt::Key_Down:
+                if (zoomLevel > 1)
+                    {
+                    zoomLevel >>= 1;
+                    update();
+                    }
+                break;
+            default :
+                break;
+            }
+        }
+
  
  
 private:
@@ -267,7 +317,7 @@ private:
         float fx = (float)x;
         float proportion = fx/fw;
         float pos = proportion - 0.5;
-        float f = pos * par.getSampleRate();
+        float f = pos * par.getSampleRate() / (float) zoomLevel;
         //status("fw:%f fx:%f pos:%f vfo:%f\n", fw, fx, pos, f);
         return f;
         }
@@ -275,7 +325,7 @@ private:
 
     int freqToX(float freq)
         {
-        float proportion = freq / par.getSampleRate();
+        float proportion = freq / par.getSampleRate() * (float) zoomLevel;
         float pos = proportion + 0.5;
         int x = (int)(pos * (float)width());
         return x;
@@ -321,17 +371,20 @@ private:
     TuneMode hoverMode;
     TuneMode tuneMode;
     bool dragging;
+    int zoomLevel;
 };
 
 
+#if 0
 
-class Waterfall_orig : public QWidget
+
+class Waterfall : public QWidget
 {
     Q_OBJECT
 
 public:
 
-    Waterfall_orig()
+    Waterfall()
         {
         resize(400, 300);
         image = QImage(width(), height(), QImage::Format_RGB32);
@@ -339,7 +392,7 @@ public:
             palette[i] = QColor::fromHsv(255-i, 255, 255, 255);
         }
         
-    virtual ~Waterfall_orig()
+    virtual ~Waterfall()
         {
         }
         
@@ -443,8 +496,9 @@ private:
 
     QImage image;
     QColor palette[256];
+    
 };
-
+#endif
 
 
 #endif /* _WATERFALL_H_ */

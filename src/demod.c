@@ -157,7 +157,7 @@ static void usbDemodulate(Demodulator *dem, float complex *data, int size, Demod
         float complex cpx = *data++;
         float v = creal(cpx) + cimag(cpx);
         //trace("v:%f",v);
-        buf[bufPtr++] = v;
+        buf[bufPtr++] = v * 100.0;
         if (bufPtr >= DEMOD_BUFSIZE)
             {
             func(buf, bufPtr, context); 
