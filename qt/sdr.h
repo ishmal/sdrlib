@@ -161,6 +161,14 @@ public slots:
         status("usb:%d", val);
         sdrSetMode(sdr, MODE_USB);
         }
+        
+protected:
+
+    virtual void closeEvent(QCloseEvent *event)
+        {
+        sdrStop(sdr);
+        sdrDelete(sdr);
+        }
 
 
 private:

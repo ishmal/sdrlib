@@ -66,7 +66,9 @@ Sdr::Sdr()
     connect(waterfall, SIGNAL(frequenciesChanged(float,float,float)), this, SLOT(setDdcFreqs(float,float,float)));
     freqDial = new FreqDial(*this);
     ui.freqDialBox->addWidget(freqDial);
-    freqDial->setFrequency(123456789.0);
+    double freq = 88700000.0;
+    freqDial->setFrequency(freq);
+    sdrSetCenterFrequency(sdr, freq);
     connect(freqDial, SIGNAL(frequencyChanged(double)), this, SLOT(setCenterFrequency(double)));
     show();
 }

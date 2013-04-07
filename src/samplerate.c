@@ -169,7 +169,8 @@ Ddc *ddcCreate(int size, float vfoFreq, float pbLoOff, float pbHiOff, float samp
     obj->delayIndex = 0;
     obj->acc        = -1.0;
     obj->bufPtr     = 0;
-    obj->vfoPhase   = 0.0 + I * 1.0;
+    //obj->vfoPhase   = 0.0 + 1.0 * I;
+    obj->vfoPhase   = 1.0;
     return obj;
 }
 
@@ -188,10 +189,10 @@ void ddcSetFreqs(Ddc *obj, float vfoFreq, float pbLoOff, float pbHiOff)
     float loFreq = pbLoOff; // +vfoFreq;
     float hiFreq = pbHiOff; // +vfoFreq;
     firBPCoeffs(obj->size, obj->coeffs, loFreq, hiFreq, obj->inRate);
-    obj->outRate = (hiFreq - loFreq) * 1.25;
+    obj->outRate = (hiFreq - loFreq); // * 1.25;
     obj->ratio = obj->outRate/obj->inRate;
-    float angle = TWOPI * vfoFreq / obj->inRate;
-    obj->vfoFreq = cos(angle) + I * sin(angle);
+    float omega = TWOPI * vfoFreq / obj->inRate;
+    obj->vfoFreq = cos(omega) + sin(omega) * I;
 }
 
 
@@ -220,15 +221,51 @@ float ddcGetOutRate(Ddc *obj)
  *     continue the loop.
  *
  * Re: the VFO
+ * 
+ * To advance the vfo's cosine and sine values, for mixing
+ * with the incoming samples, look at the following trig
+ * identities:
+ *      
  * cos(a+b) = cos(a)*cos(b) - sin(a)*sin(b)
  * sin(a+b) = sin(a)*cos(b) + cos(a)*sin(b)
+ * 
+ * Let 'a' be the current phase angle, and let 'b' be
+ * the increment added to that angle for every incoming
+ * sample period.
+ *  
+ * Let omega be that angular increment (angular frequency) or 'b'
+ *   
+ *  float omega = 2.0 * Pi * freq / sampleRate  
+ * 
+ *  cosb = cos(omega)
+ *  sinb = sin(omega)
+ *  newcos = cos * cosb - sin * sinb
+ *  newsin = sin * sinb + cos * sinb
+ *  cos = newcos
+ *  sin = newsin
+ *  
+ * Note that this cross-product is identical to a complex
+ * multiplication, if the real part holds the cosine value,
+ * and the imaginary part holds the sine.      
+ * 
+ * c.r =  a.r * b.r -  a.i * b.i
+ * c.i =  a.r * b.i +  a.i * b.r
+ * 
+ * Let b be the phase and a be the angular frequency
+ * newphase.r = phase.r * a.r - phase.i * a.i
+ * newphase.i = phase.i * a.r + phase.i * a.i
+ * 
+ * so... newphase = phase * freq  
+ *      
  * So, let
- *  float omega = TWOPI * freq / sampleRate
  *  float complex vfoFreq = cos(omega) + I * sin(omega);
- *  float complex  vfoPhase = 0 + I*1;
- *  for each sample,
+ *  float complex vfoPhase = 0.0 + 1.0*I
+ *   
+ *  And for each sample,
  *     vfoPhase *= vfoFreq
  *     downshifted = sample * vfoPhase
+ *     
+ * So,  a lot of discussion, but extremely simple in the end!
  * 
  */     
 void ddcUpdate(Ddc *obj, float complex *data, int dataLen, DdcFunc *func, void *context)

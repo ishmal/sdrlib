@@ -47,13 +47,10 @@ static void amDemodulate(Demodulator *dem, float complex *data, int size, DemodO
 {
     int bufPtr = dem->bufPtr;
     float *buf = dem->outBuf;
-    float complex lastVal = dem->lastVal;
     while (size--)
         {
         float complex cpx = *data++;
-        float complex prod = cpx * conj(lastVal);
-        lastVal = cpx;
-        float v = cabsf(prod);
+        float v = cabsf(cpx);
         //trace("v:%f",v);
         buf[bufPtr++] = v;
         if (bufPtr >= DEMOD_BUFSIZE)
@@ -62,7 +59,6 @@ static void amDemodulate(Demodulator *dem, float complex *data, int size, DemodO
             bufPtr = 0;
             }
         }
-    dem->lastVal = lastVal;
     dem->bufPtr  = bufPtr;
 }
 
@@ -125,13 +121,10 @@ static void lsbDemodulate(Demodulator *dem, float complex *data, int size, Demod
 {
     int bufPtr = dem->bufPtr;
     float *buf = dem->outBuf;
-    float complex lastVal = dem->lastVal;
     while (size--)
         {
         float complex cpx = *data++;
-        float complex prod = cpx * conj(lastVal);
-        lastVal = cpx;
-        float v = cabsf(prod);
+        float v = creal(cpx) - cimag(cpx);
         //trace("v:%f",v);
         buf[bufPtr++] = v;
         if (bufPtr >= DEMOD_BUFSIZE)
@@ -140,7 +133,6 @@ static void lsbDemodulate(Demodulator *dem, float complex *data, int size, Demod
             bufPtr = 0;
             }
         }
-    dem->lastVal = lastVal;
     dem->bufPtr  = bufPtr;
 }
 
@@ -160,13 +152,10 @@ static void usbDemodulate(Demodulator *dem, float complex *data, int size, Demod
 {
     int bufPtr = dem->bufPtr;
     float *buf = dem->outBuf;
-    float complex lastVal = dem->lastVal;
     while (size--)
         {
         float complex cpx = *data++;
-        float complex prod = cpx * conj(lastVal);
-        lastVal = cpx;
-        float v = cabsf(prod);
+        float v = creal(cpx) + cimag(cpx);
         //trace("v:%f",v);
         buf[bufPtr++] = v;
         if (bufPtr >= DEMOD_BUFSIZE)
@@ -175,7 +164,6 @@ static void usbDemodulate(Demodulator *dem, float complex *data, int size, Demod
             bufPtr = 0;
             }
         }
-    dem->lastVal = lastVal;
     dem->bufPtr  = bufPtr;
 }
 
