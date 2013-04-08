@@ -27,7 +27,9 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
+#include <sys/time.h>
 #include <sdrlib.h>
+
 
 #include <portaudio.h>
 
@@ -52,7 +54,14 @@ Audio *audioCreate()
         return audio;
     audio->sampleRate = (float)SAMPLE_RATE;
     audio->gain = 1.0;
-    audio->queue = queueCreate(1024);
+    audio->ringBuffer = ringbuffer_create(1024, AUDIO_FRAMES_PER_BUFFER * sizeof(float));
+    if (!audio->ringBuffer)
+        {
+        error("audioCreate: cannot initialize ringbuffer");
+        free(audio);
+        return NULL;
+        }
+    trace("audio ok");
 
     int err = Pa_Initialize();
     if ( err != paNoError )
@@ -118,7 +127,7 @@ void audioDelete(Audio *audio)
     err = Pa_Terminate();
     if ( err != paNoError )
         error("audioDelete terminate: %s", Pa_GetErrorText(err) );
-    queueDelete(audio->queue);
+    ringbuffer_delete(audio->ringBuffer);
     free(audio);
 }
 
@@ -154,18 +163,25 @@ static int paCallback(const void *inputBuffer, void *outputBuffer,
 {
     Audio *audio = (Audio *) userData;
     float gain = audio->gain;
-    int size;
-    float *inbuf = queuePop(audio->queue, &size);
-    float *in = inbuf;
-    float *out = (float *)outputBuffer;
-    while (framesPerBuffer--)
+    
+    ringbuffer *rb = audio->ringBuffer;
+    
+    float *in = (float *) ringbuffer_rpeek(rb);
+    if (in)
         {
-        float v = (*in++) * gain;
-        //trace("v:%f",v);
-        *out++ = v;
-        *out++ = v;
+        float *out = (float *)outputBuffer;
+        while (framesPerBuffer--)
+            {
+            float v = (*in++) * gain;
+            //trace("v:%f",v);
+            *out++ = v;
+            *out++ = v;
+            }
         }
-    free(inbuf);
+    else
+        {
+        memset(outputBuffer, 0, framesPerBuffer * 2 * sizeof(float));
+        }
     return paContinue;
 }
 
@@ -175,11 +191,13 @@ static int paCallback(const void *inputBuffer, void *outputBuffer,
  */
 int audioPlay(Audio *audio, float *data, int size)
 {
-    int allocSize = size * sizeof(float);
-    float *buf = (float *)malloc(allocSize);
-    memcpy(buf, data, allocSize);
-    queuePush(audio->queue, buf, size);
-    return TRUE;
+    ringbuffer *rb = audio->ringBuffer;
+    int ret = ringbuffer_write(rb, data);
+    if (!ret)
+        {
+        error("Audio: ringBuffer full");
+        }
+    return ret;
 }
 
 

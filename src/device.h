@@ -112,9 +112,9 @@ struct Device
     
     /**
      * Read/write complex data to/from the device
-     * @return true if successful, else false
+     * @return number of samples read
      */
-    float complex *(*read)(void *ctx, int *bufferlen);
+    int (*read)(void *ctx, float complex *buf, int buflen);
     /**
      * Read/write complex data to/from the device
      * @return true if successful, else false

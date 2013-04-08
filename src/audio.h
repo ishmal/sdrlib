@@ -31,7 +31,7 @@
 #include <pthread.h>
 
 #include "sdrlib.h"
-#include "queue.h"
+#include "ringbuffer.h"
 
 #define AUDIO_FRAMES_PER_BUFFER (16*1024)
 
@@ -41,7 +41,7 @@ struct Audio
     PaStream *stream;
     float sampleRate;
     float gain;
-    Queue *queue;
+    ringbuffer *ringBuffer;
 };
 
 

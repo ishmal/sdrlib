@@ -339,20 +339,22 @@ static void *sdrReaderThread(void *ctx)
     SdrLib *sdr = (SdrLib *)ctx;
     Device *dev = sdr->device;
     
+    int bufsize = 1024*1024;
+    float complex *readbuf = (float complex *)malloc(bufsize * sizeof(float complex));
+    
     sdr->running = 1;
     
     while (sdr->running && dev->isOpen(dev->ctx))
         {
-        int size;
-        float complex *data = (float complex *)dev->read(dev->ctx, &size);
-        if (data)
+        int readCount = dev->read(dev->ctx, readbuf, bufsize);
+        if (readCount)
             {
-            fftUpdate(sdr->fft, data, size, fftOutput, sdr);
-            ddcUpdate(sdr->ddc, data, size, ddcOutput, sdr);
-            free(data);
+            fftUpdate(sdr->fft, readbuf, readCount, fftOutput, sdr);
+            ddcUpdate(sdr->ddc, readbuf, readCount, ddcOutput, sdr);
             }
         }
 
+    free(readbuf);
     sdr->running = 0;
     return NULL;
 }
