@@ -29,7 +29,7 @@
 #include "private.h"
 
 
-static void nullDemodulate(Demodulator *dem, float complex *data, int size, DemodOutputFunc *func, void *context)
+static void nullDemodulate(Demodulator *dem, float complex *data, int size, FloatCallbackFunc *func, void *context)
 {
 }
 
@@ -43,7 +43,7 @@ Demodulator *demodNullCreate()
     return dem;
 }
 
-static void amDemodulate(Demodulator *dem, float complex *data, int size, DemodOutputFunc *func, void *context)
+static void amDemodulate(Demodulator *dem, float complex *data, int size, FloatCallbackFunc *func, void *context)
 {
     int bufPtr = dem->bufPtr;
     float *buf = dem->outBuf;
@@ -74,7 +74,7 @@ Demodulator *demodAmCreate()
     return dem;
 }
 
-static void fmDemodulate(Demodulator *dem, float complex *data, int size, DemodOutputFunc *func, void *context)
+static void fmDemodulate(Demodulator *dem, float complex *data, int size, FloatCallbackFunc *func, void *context)
 {
     int bufPtr = dem->bufPtr;
     float *buf = dem->outBuf;
@@ -117,7 +117,7 @@ Demodulator *demodFmCreate()
     return dem;
 }
 
-static void lsbDemodulate(Demodulator *dem, float complex *data, int size, DemodOutputFunc *func, void *context)
+static void lsbDemodulate(Demodulator *dem, float complex *data, int size, FloatCallbackFunc *func, void *context)
 {
     int bufPtr = dem->bufPtr;
     float *buf = dem->outBuf;
@@ -148,7 +148,7 @@ Demodulator *demodLsbCreate()
     return dem;
 }
 
-static void usbDemodulate(Demodulator *dem, float complex *data, int size, DemodOutputFunc *func, void *context)
+static void usbDemodulate(Demodulator *dem, float complex *data, int size, FloatCallbackFunc *func, void *context)
 {
     int bufPtr = dem->bufPtr;
     float *buf = dem->outBuf;

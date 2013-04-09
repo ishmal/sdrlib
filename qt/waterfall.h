@@ -31,14 +31,6 @@
 #include <QImage>
 #include <QPixmap>
 #include <QColor>
-#if 0
-#include <QPaintEvent>
-#include <QResizeEvent>
-#include <QDragMoveEvent>
-#include <QMouseEvent>
-#include <QWheelEvent>
-#include <QKeyEvent>
-#endif
 #include <QCursor>
 
 

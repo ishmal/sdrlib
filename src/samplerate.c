@@ -100,7 +100,7 @@ void decimatorDelete(Decimator *dec)
         }
 }
 
-void decimatorUpdate(Decimator *dec, float complex *data, int dataLen, DecimatorFunc *func, void *context)
+void decimatorUpdate(Decimator *dec, float complex *data, int dataLen, ComplexCallbackFunc *func, void *context)
 {
     int   size         = dec->size;
     float *coeffs      = dec->coeffs;
@@ -268,7 +268,7 @@ float ddcGetOutRate(Ddc *obj)
  * So,  a lot of discussion, but extremely simple in the end!
  * 
  */     
-void ddcUpdate(Ddc *obj, float complex *data, int dataLen, DdcFunc *func, void *context)
+void ddcUpdate(Ddc *obj, float complex *data, int dataLen, ComplexCallbackFunc *func, void *context)
 {
     int   size         = obj->size;
     float *coeffs      = obj->coeffs;
@@ -384,7 +384,7 @@ void resamplerSetOutRate(Resampler *obj, float outRate)
 }
 
 
-void resamplerUpdate(Resampler *obj, float *data, int dataLen, ResamplerFunc *func, void *context)
+void resamplerUpdate(Resampler *obj, float *data, int dataLen, FloatCallbackFunc *func, void *context)
 {
     int   size         = obj->size;
     float *coeffs      = obj->coeffs;
@@ -467,7 +467,7 @@ void resamplerUpdate(Resampler *obj, float *data, int dataLen, ResamplerFunc *fu
 }
 
 
-void resamplerUpdateC(Resampler *obj, float complex *data, int dataLen, ResamplerFuncC *func, void *context)
+void resamplerUpdateC(Resampler *obj, float complex *data, int dataLen, ComplexCallbackFunc *func, void *context)
 {
     int   size         = obj->size;
     float *coeffs      = obj->coeffs;
@@ -548,4 +548,5 @@ void resamplerUpdateC(Resampler *obj, float complex *data, int dataLen, Resample
     obj->acc = acc;
     obj->bufPtr = bufPtr;
 }
+
 

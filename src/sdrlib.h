@@ -34,13 +34,18 @@
 
 #ifdef __cplusplus
 extern "C" {
+#else
+#include <complex.h>
 #endif
 
 
 
 #define SDR_MAX_DEVICES 30
 
+
 typedef void PowerSpectrumFunc(unsigned int *ps, int size, void *ctx);
+typedef void FloatCallbackFunc(float *data, int size, void *ctx);
+typedef void ComplexCallbackFunc(float complex *data, int size, void *ctx);
 
 /**
  * Forward declarations, hidden from clients

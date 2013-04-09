@@ -32,7 +32,6 @@
 #include "sdrlib.h"
 #include "audio.h"
 
-typedef void DemodOutputFunc(float *buf, int size, void *context);
 
 
 /**
@@ -47,7 +46,7 @@ struct Demodulator
     float outBuf[DEMOD_BUFSIZE];
     int   bufPtr;
     float complex lastVal;
-    void (*update)(Demodulator *dem, float complex *data, int size, DemodOutputFunc *func, void *context);
+    void (*update)(Demodulator *dem, float complex *data, int size, FloatCallbackFunc *func, void *context);
 };
 
 

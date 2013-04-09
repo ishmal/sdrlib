@@ -61,7 +61,6 @@ Audio *audioCreate()
         free(audio);
         return NULL;
         }
-    trace("audio ok");
 
     int err = Pa_Initialize();
     if ( err != paNoError )

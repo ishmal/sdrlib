@@ -31,7 +31,7 @@
 #include <rtl-sdr.h>
 
 #include "device.h"
-#include "queue.h"
+#include "ringbuffer.h"
 
 #ifndef TRUE
 #define TRUE  1
@@ -41,16 +41,18 @@
 #define FALSE 0
 #endif
 
-#define BUFSIZE 1024*1024
+
+//Set this to rtl-sdr's default async callback buffer size
+#define BUFSIZE (16 * 32 * 512)
 
 typedef struct
 {
     rtlsdr_dev_t *dev;
     float complex lut[256 * 256 * sizeof(float complex)];
     float gainscale;
-    unsigned char readbuf[BUFSIZE];
+    float complex readbuf[BUFSIZE];
     pthread_t asyncThread;
-    Queue *queue;
+    ringbuffer *ringBuffer;
     Parent *par;
     int isOpen;
 } Context;
@@ -122,16 +124,20 @@ static double getCenterFrequency(void *context)
 
 
 
-static float complex *read(void *context, int *buflen)
+static int read(void *context, float complex *buf, int buflen)
 {
     Context *ctx = (Context *)context;
     if (!ctx->isOpen)
         return 0;
-    int size;
-    float complex *buf = (float complex *)queuePop(ctx->queue, &size);
-    if (buf)
-        *buflen = size;
-    return buf;
+    ringbuffer *rb = ctx->ringBuffer;
+    if (buflen < BUFSIZE)
+        {
+        printf("buflen param is too small");
+        return 0;
+        }
+    if (!ringbuffer_read(rb, buf))
+        return 0; 
+    return BUFSIZE;
 }
 
 
@@ -172,17 +178,23 @@ static void async_read_callback(unsigned char *buf, uint32_t len, void *context)
     float complex *lut = ctx->lut;
     unsigned char *b = buf;
     int count = len>>1;
-    float complex *cpxbuf = (float complex *)malloc(count * sizeof(float complex));
-    //malloc check
-    float complex *cpx = cpxbuf;
-    int i = count;
-    while (i--)
+    if (count > BUFSIZE)
         {
-        int hi = (int)*b++;
-        int lo = (int)*b++;
-        *cpx++ = lut[(hi<<8) + lo];
+        printf("read buffer too small");
+        return;
         }
-    queuePush(ctx->queue, cpxbuf, count);
+    ringbuffer *rb = ctx->ringBuffer;
+    float complex *cpx = ringbuffer_wpeek(rb);
+    if (cpx)
+        {
+        int i = count;
+        while (i--)
+            {
+            int hi = (int)*b++;
+            int lo = (int)*b++;
+            *cpx++ = lut[(hi<<8) + lo];
+            }
+        }
     //ctx->par->trace("len:%d", len);
 }
 
@@ -236,7 +248,7 @@ static int open(void *context)
     
     ret = rtlsdr_reset_buffer(dev);
     ctx->isOpen = 1;
-    ctx->queue = queueCreate(1024);
+    ctx->ringBuffer = ringbuffer_create(100, BUFSIZE * sizeof (float complex));
     int rc = pthread_create(&(ctx->asyncThread), NULL, asyncLoop, ctx);
     if (rc)
         {
@@ -261,7 +273,7 @@ static int close(void *context)
     ctx->isOpen = 0;
     rtlsdr_cancel_async(ctx->dev);
     rtlsdr_close(ctx->dev);
-    queueDelete(ctx->queue);
+    ringbuffer_delete(ctx->ringBuffer);
     return 1;
 }
 
