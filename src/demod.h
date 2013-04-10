@@ -30,23 +30,18 @@
 
 
 #include "sdrlib.h"
-#include "audio.h"
 
 
 
-/**
- * It is important to send buffers the size that
- * PortAudio expects
- */  
-#define DEMOD_BUFSIZE (AUDIO_FRAMES_PER_BUFFER)
+#define DEMOD_BUFSIZE (16384)
 
 
 struct Demodulator
 {
-    float outBuf[DEMOD_BUFSIZE];
-    int   bufPtr;
+    void (*update)(Demodulator *dem, float complex *data, int size, FloatOutputFunc *func, void *context);
     float complex lastVal;
-    void (*update)(Demodulator *dem, float complex *data, int size, FloatCallbackFunc *func, void *context);
+    int   bufPtr;
+    float outBuf[DEMOD_BUFSIZE];
 };
 
 

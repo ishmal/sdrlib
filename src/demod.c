@@ -29,7 +29,7 @@
 #include "private.h"
 
 
-static void nullDemodulate(Demodulator *dem, float complex *data, int size, FloatCallbackFunc *func, void *context)
+static void nullDemodulate(Demodulator *dem, float complex *data, int size, FloatOutputFunc *func, void *context)
 {
 }
 
@@ -43,7 +43,7 @@ Demodulator *demodNullCreate()
     return dem;
 }
 
-static void amDemodulate(Demodulator *dem, float complex *data, int size, FloatCallbackFunc *func, void *context)
+static void amDemodulate(Demodulator *dem, float complex *data, int size, FloatOutputFunc *func, void *context)
 {
     int bufPtr = dem->bufPtr;
     float *buf = dem->outBuf;
@@ -55,7 +55,7 @@ static void amDemodulate(Demodulator *dem, float complex *data, int size, FloatC
         buf[bufPtr++] = v;
         if (bufPtr >= DEMOD_BUFSIZE)
             {
-            func(buf, bufPtr, context); 
+            func(buf, DEMOD_BUFSIZE, context); 
             bufPtr = 0;
             }
         }
@@ -74,7 +74,7 @@ Demodulator *demodAmCreate()
     return dem;
 }
 
-static void fmDemodulate(Demodulator *dem, float complex *data, int size, FloatCallbackFunc *func, void *context)
+static void fmDemodulate(Demodulator *dem, float complex *data, int size, FloatOutputFunc *func, void *context)
 {
     int bufPtr = dem->bufPtr;
     float *buf = dem->outBuf;
@@ -97,7 +97,7 @@ static void fmDemodulate(Demodulator *dem, float complex *data, int size, FloatC
         buf[bufPtr++] = v;
         if (bufPtr >= DEMOD_BUFSIZE)
             {
-            func(buf, bufPtr, context); 
+            func(buf, DEMOD_BUFSIZE, context); 
             bufPtr = 0;
             }
         }
@@ -117,7 +117,7 @@ Demodulator *demodFmCreate()
     return dem;
 }
 
-static void lsbDemodulate(Demodulator *dem, float complex *data, int size, FloatCallbackFunc *func, void *context)
+static void lsbDemodulate(Demodulator *dem, float complex *data, int size, FloatOutputFunc *func, void *context)
 {
     int bufPtr = dem->bufPtr;
     float *buf = dem->outBuf;
@@ -129,7 +129,7 @@ static void lsbDemodulate(Demodulator *dem, float complex *data, int size, Float
         buf[bufPtr++] = v;
         if (bufPtr >= DEMOD_BUFSIZE)
             {
-            func(buf, bufPtr, context); 
+            func(buf, DEMOD_BUFSIZE, context); 
             bufPtr = 0;
             }
         }
@@ -148,7 +148,7 @@ Demodulator *demodLsbCreate()
     return dem;
 }
 
-static void usbDemodulate(Demodulator *dem, float complex *data, int size, FloatCallbackFunc *func, void *context)
+static void usbDemodulate(Demodulator *dem, float complex *data, int size, FloatOutputFunc *func, void *context)
 {
     int bufPtr = dem->bufPtr;
     float *buf = dem->outBuf;
@@ -160,7 +160,7 @@ static void usbDemodulate(Demodulator *dem, float complex *data, int size, Float
         buf[bufPtr++] = v * 100.0;
         if (bufPtr >= DEMOD_BUFSIZE)
             {
-            func(buf, bufPtr, context); 
+            func(buf, DEMOD_BUFSIZE, context); 
             bufPtr = 0;
             }
         }

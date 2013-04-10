@@ -54,7 +54,8 @@ Audio *audioCreate()
         return audio;
     audio->sampleRate = (float)SAMPLE_RATE;
     audio->gain = 1.0;
-    audio->ringBuffer = ringbuffer_create(1024, AUDIO_FRAMES_PER_BUFFER * sizeof(float));
+    int elemSize = AUDIO_FRAMES_PER_BUFFER * sizeof(float);
+    audio->ringBuffer = ringbuffer_create(1024, elemSize);
     if (!audio->ringBuffer)
         {
         error("audioCreate: cannot initialize ringbuffer");
@@ -176,9 +177,11 @@ static int paCallback(const void *inputBuffer, void *outputBuffer,
             *out++ = v;
             *out++ = v;
             }
+        ringbuffer_radvance(rb);
         }
     else
         {
+        trace("underflow");
         memset(outputBuffer, 0, framesPerBuffer * 2 * sizeof(float));
         }
     return paContinue;

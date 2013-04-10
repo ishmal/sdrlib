@@ -50,7 +50,6 @@ typedef struct
     rtlsdr_dev_t *dev;
     float complex lut[256 * 256 * sizeof(float complex)];
     float gainscale;
-    float complex readbuf[BUFSIZE];
     pthread_t asyncThread;
     ringbuffer *ringBuffer;
     Parent *par;
@@ -132,7 +131,7 @@ static int read(void *context, float complex *buf, int buflen)
     ringbuffer *rb = ctx->ringBuffer;
     if (buflen < BUFSIZE)
         {
-        printf("buflen param is too small");
+        ctx->par->error("buflen param is too small");
         return 0;
         }
     if (!ringbuffer_read(rb, buf))
@@ -180,11 +179,11 @@ static void async_read_callback(unsigned char *buf, uint32_t len, void *context)
     int count = len>>1;
     if (count > BUFSIZE)
         {
-        printf("read buffer too small");
+        ctx->par->error("read buffer too small");
         return;
         }
     ringbuffer *rb = ctx->ringBuffer;
-    float complex *cpx = ringbuffer_wpeek(rb);
+    float complex *cpx = (float complex *)ringbuffer_wpeek(rb);
     if (cpx)
         {
         int i = count;
@@ -194,6 +193,7 @@ static void async_read_callback(unsigned char *buf, uint32_t len, void *context)
             int lo = (int)*b++;
             *cpx++ = lut[(hi<<8) + lo];
             }
+        ringbuffer_wadvance(rb);
         }
     //ctx->par->trace("len:%d", len);
 }

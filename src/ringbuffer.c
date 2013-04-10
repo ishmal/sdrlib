@@ -13,7 +13,7 @@ ringbuffer *ringbuffer_create(int element_count, int element_size)
     
 	rb->total_size = total_size;
 	rb->element_size = element_size;
-	rb->head = element_size;
+	rb->head = 0;
 	rb->tail = 0;
 	return rb;
 }
@@ -30,7 +30,7 @@ int ringbuffer_is_full(volatile const ringbuffer *rb)
 
 int ringbuffer_is_empty(volatile const ringbuffer *rb)
 {
-	return (rb->tail + rb->element_size) % rb->total_size == rb->head;
+	return rb->head == rb->tail;
 }
 
 int ringbuffer_write(volatile ringbuffer *rb, const void *element)
@@ -48,29 +48,35 @@ void *ringbuffer_wpeek(volatile ringbuffer *rb)
     int newhead = (rb->head + rb->element_size) % rb->total_size;
     if (newhead == rb->tail)
         return NULL;
-	void *buf = (void*)&rb->elems[rb->head];
-	rb->head = newhead;
-	return buf;
+	return (void*)&rb->elems[rb->head];
+}
+
+void ringbuffer_wadvance(volatile ringbuffer *rb)
+{
+    rb->head = (rb->head + rb->element_size) % rb->total_size;
 }
 
 int ringbuffer_read(volatile ringbuffer *rb, void *element)
 {
-    int newtail = (rb->tail + rb->element_size) % rb->total_size;
-    if (newtail == rb->head)
+    if (rb->head == rb->tail)
         return 0;
-	rb->tail = newtail;
 	memcpy((void*)element, (void*)&rb->elems[rb->tail], rb->element_size);
+	rb->tail = (rb->tail + rb->element_size) % rb->total_size;
 	return 1;
 }
 
 
 void *ringbuffer_rpeek(volatile ringbuffer *rb)
 {
-    int newtail = (rb->tail + rb->element_size) % rb->total_size;
-    if (newtail == rb->head)
+    if (rb->tail == rb->head)
         return NULL;
-	rb->tail = newtail;
 	return (void*)&(rb->elems[rb->tail]);
+}
+
+
+void ringbuffer_radvance(volatile ringbuffer *rb)
+{
+    rb->tail = (rb->tail + rb->element_size) % rb->total_size;
 }
 
 

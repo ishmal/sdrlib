@@ -25,7 +25,10 @@ int ringbuffer_is_empty(volatile const ringbuffer *rb);
 int ringbuffer_is_full(volatile const ringbuffer *rb);
 int ringbuffer_write(volatile ringbuffer *rb, const void *element);
 void *ringbuffer_wpeek(volatile ringbuffer *rb);
+void ringbuffer_wadvance(volatile ringbuffer *rb);
 int ringbuffer_read(volatile ringbuffer *rb, void *element);
 void *ringbuffer_rpeek(volatile ringbuffer *rb);
+void ringbuffer_radvance(volatile ringbuffer *rb);
+
 
 #endif

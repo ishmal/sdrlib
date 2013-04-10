@@ -324,13 +324,14 @@ static void resamplerOutput(float *buf, int size, void *ctx)
 static void demodOutput(float *buf, int size, void *ctx)
 {
     SdrLib *sdr = (SdrLib *)ctx;
-    //trace("Push audio:%d", size);
+    //trace("Demod:%d", size);
     resamplerUpdate(sdr->resampler, buf, size, resamplerOutput, sdr);
 }
 
 static void ddcOutput(float complex *data, int size, void *ctx)
 {
     SdrLib *sdr = (SdrLib *)ctx;
+    //trace("Ddc:%d", size);
     sdr->demod->update(sdr->demod, data, size, demodOutput, sdr);
 }
 

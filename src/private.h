@@ -26,8 +26,8 @@
  */
 
 
-#define PI 3.141592654f
-#define TWOPI 6.283185307f
+#define PI 3.141592654
+#define TWOPI 6.283185307
 
 #ifndef TRUE
 #define TRUE  (1)

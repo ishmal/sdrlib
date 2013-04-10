@@ -36,6 +36,8 @@
 extern "C" {
 #else
 #include <complex.h>
+typedef void FloatOutputFunc(float *data, int size, void *ctx);
+typedef void ComplexOutputFunc(float complex *data, int size, void *ctx);
 #endif
 
 
@@ -44,8 +46,6 @@ extern "C" {
 
 
 typedef void PowerSpectrumFunc(unsigned int *ps, int size, void *ctx);
-typedef void FloatCallbackFunc(float *data, int size, void *ctx);
-typedef void ComplexCallbackFunc(float complex *data, int size, void *ctx);
 
 /**
  * Forward declarations, hidden from clients

@@ -76,7 +76,7 @@ void decimatorSetRates(Decimator *dec, float highRate, float lowRate);
 /**
  *
  */
-void decimatorUpdate(Decimator *dec, float complex *data, int dataLen, ComplexCallbackFunc *func, void *context);
+void decimatorUpdate(Decimator *dec, float complex *data, int dataLen, ComplexOutputFunc *func, void *context);
 
 
 //########################################################################
@@ -132,7 +132,7 @@ void ddcSetFreqs(Ddc *obj, float vfoFreq, float pbLoOff, float pbHiOff);
 /**
  *
  */
-void ddcUpdate(Ddc *obj, float complex *data, int dataLen, ComplexCallbackFunc *func, void *context);
+void ddcUpdate(Ddc *obj, float complex *data, int dataLen, ComplexOutputFunc *func, void *context);
 
 
 //########################################################################
@@ -191,12 +191,12 @@ void resamplerSetOutRate(Resampler *obj, float outRate);
 /**
  *
  */
-void resamplerUpdate(Resampler *obj, float *data, int dataLen, FloatCallbackFunc *func, void *context);
+void resamplerUpdate(Resampler *obj, float *data, int dataLen, FloatOutputFunc *func, void *context);
 
 /**
  *
  */
-void resamplerUpdateC(Resampler *obj, float complex *data, int dataLen, ComplexCallbackFunc *func, void *context);
+void resamplerUpdateC(Resampler *obj, float complex *data, int dataLen, ComplexOutputFunc *func, void *context);
 
 
 

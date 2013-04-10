@@ -79,6 +79,10 @@ void firDelete(Fir *fir)
 }
 
 
+/**
+ * Add samples to the delay line in reverse order,
+ * so we can walk them newest to oldest
+ */
 float firUpdate(Fir *fir, float sample)
 {
     float *delayLine = fir->delayLine;
@@ -94,12 +98,10 @@ float firUpdate(Fir *fir, float sample)
     while (count--)
         {
         float v = delayLine[idx];
-        idx--;
-        if (idx < 0)
-            idx = size - 1;
+        idx = (idx+1) % size;
         sum += v * (*coeff++);
         }
-    fir->delayIndex = (delayIndex + 1) % size;
+    fir->delayIndex = (delayIndex) ? delayIndex-1 : size-1;
     return sum;
 }
 
@@ -121,12 +123,10 @@ float complex firUpdateC(Fir *fir, float complex sample)
     while (count--)
         {
         float complex v = delayLine[idx];
-        idx--;
-        if (idx < 0)
-            idx = size - 1;
+        idx = (idx+1) % size;
         sum += v * (*coeff++);
         }
-    fir->delayIndex = (delayIndex + 1) % size;
+    fir->delayIndex = (delayIndex) ? delayIndex-1 : size-1;
     return sum;
 }
 
@@ -240,7 +240,7 @@ static void firBPCoeffs(int size, float *coeffs, float loCutoffFreq, float hiCut
         int i = idx - center;
         coeffs[idx] = (i == 0) ? 
             1.0 - (omega2-omega1) / PI :
-            (sin(omega1*i) - sin(omega2 * i)) / (PI * i);
+            (sin(omega2*i) - sin(omega1 * i)) / (PI * i);
         }
 }
 
