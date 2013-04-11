@@ -72,7 +72,6 @@ static int setGain(void *context, float gain)
     Context *ctx = (Context *)context;
     //the int param for rtl gain is tenths of a dB
     int dgain = (int)(gain * ctx->gainscale);
-    printf("dgain:%d\n", dgain);
     int ret = rtlsdr_set_tuner_gain(ctx->dev, dgain);
     if (ret)
         {
@@ -212,7 +211,7 @@ static int open(void *context)
     ret = rtlsdr_get_tuner_gains(dev, gains);
     int higain = gains[count - 1];
 
-    ctx->par->trace("higain: %d", higain);
+    //ctx->par->trace("higain: %d", higain);
     ctx->dev = dev;
     ctx->gainscale = (float)higain;
     
@@ -229,7 +228,7 @@ static int open(void *context)
         ctx->par->error("ERROR; return code from pthread_create() is %d", rc);
         return FALSE;
         }
-    ctx->par->trace("started");
+    //ctx->par->trace("started");
     return 1;
 }
 
