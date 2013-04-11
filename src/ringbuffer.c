@@ -40,7 +40,7 @@ int ringbuffer_write(volatile ringbuffer *rb, const void *element)
         return 0;
 	memcpy((void*)&rb->elems[rb->head], (void*)element, rb->element_size);
 	rb->head = newhead;
-	return 1;
+	return rb->element_size;
 }
 
 void *ringbuffer_wpeek(volatile ringbuffer *rb)
@@ -62,7 +62,7 @@ int ringbuffer_read(volatile ringbuffer *rb, void *element)
         return 0;
 	memcpy((void*)element, (void*)&rb->elems[rb->tail], rb->element_size);
 	rb->tail = (rb->tail + rb->element_size) % rb->total_size;
-	return 1;
+	return rb->element_size;
 }
 
 

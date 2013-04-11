@@ -42,8 +42,12 @@
 #endif
 
 
-//Set this to rtl-sdr's default async callback buffer size
-#define BUFSIZE (16 * 32 * 512)
+/**
+ * Set this to rtl-sdr's default async callback buffer size
+ * divided by 2, since two bytes will make 1 complex
+ * 262144 / 2 = 131072
+ */
+#define BUFSIZE (16 * 32 * 512 / 2)
 
 typedef struct
 {
@@ -139,36 +143,6 @@ static int read(void *context, float complex *buf, int buflen)
     return BUFSIZE;
 }
 
-
-/*
-static int read(void *context, float complex *cbuf, int buflen)
-{
-    Context *ctx = (Context *)context;
-    if (!ctx->isOpen)
-        return 0;
-    unsigned char *bbuf = ctx->readbuf;
-    float complex *lut = ctx->lut;
-    int count;
-    int ret = rtlsdr_read_sync(ctx->dev, bbuf, buflen<<1, &count);
-    if (ret < 0)
-        {
-        ctx->par->error("rtlsdr_read_sync failed");
-        return 0;
-        }
-    //cpx->par->trace("count:%d", count);
-    int nrCpx = count >> 1;
-    float complex *cpx = cbuf;
-    unsigned char *b = bbuf;
-    int i=nrCpx;
-    while (i--)
-        {
-        int hi = (int)*b++;
-        int lo = (int)*b++;
-        *cpx++ = lut[(hi<<8) + lo];
-        }
-    return nrCpx;
-}
-*/
 
 
 static void async_read_callback(unsigned char *buf, uint32_t len, void *context)

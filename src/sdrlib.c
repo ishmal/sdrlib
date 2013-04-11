@@ -300,6 +300,9 @@ void sdrSetPowerSpectrumFunc(SdrLib *sdr, PowerSpectrumFunc *func, void *ctx)
 
 
 
+/*############################################################################
+## R E A D E R    T H R E A D
+############################################################################*/
 
 
 
@@ -352,6 +355,10 @@ static void *sdrReaderThread(void *ctx)
             {
             fftUpdate(sdr->fft, readbuf, readCount, fftOutput, sdr);
             ddcUpdate(sdr->ddc, readbuf, readCount, ddcOutput, sdr);
+            }
+        else
+            {
+            sched_yield();
             }
         }
 

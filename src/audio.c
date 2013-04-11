@@ -181,7 +181,7 @@ static int paCallback(const void *inputBuffer, void *outputBuffer,
         }
     else
         {
-        trace("underflow");
+        //trace("underflow");
         memset(outputBuffer, 0, framesPerBuffer * 2 * sizeof(float));
         }
     return paContinue;

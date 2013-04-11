@@ -72,10 +72,9 @@ Decimator *decimatorCreate(int size, float highRate, float lowRate)
     dec->size = size;
     dec->coeffs = (float *)malloc(size * sizeof(float));
     decimatorSetRates(dec, highRate, lowRate);
-    dec->delayLine = (float complex *)malloc(size * sizeof(float complex));
-    int i = 0;
-    for (; i < size ; i++)
-        dec->delayLine[i] = 0;
+    int delayLineSize = size * sizeof(float complex);
+    dec->delayLine = (float complex *)malloc(delayLineSize);
+    memset(dec->delayLine, 0, delayLineSize);
     dec->delayIndex = 0;
     dec->acc = 0.0;
     dec->bufPtr = 0;
@@ -128,9 +127,8 @@ void decimatorUpdate(Decimator *dec, float complex *data, int dataLen, ComplexOu
             int c = size;
             while (c--)
                 {
-                float complex v = delayLine[idx++];
+                sum += delayLine[idx++] * (*coeff++);
                 idx %= size;
-                sum += v * (*coeff++);
                 }
             //trace("sum:%f", sum * 1000.0);
             buf[bufPtr++] = sum;
@@ -293,17 +291,13 @@ void ddcUpdate(Ddc *obj, float complex *data, int dataLen, ComplexOutputFunc *fu
             {
             acc -= 1.0;
             float complex sum = 0.0;
-            //walk the coefficients from first to last
-            //and the delay line from newest to oldest
             int idx = delayIndex;
             float *coeff = coeffs; 
             int c = size;
             while (c--)
                 {
-                float complex v = delayLine[idx++];
+                sum += delayLine[idx++] * (*coeff++);
                 idx %= size;
-                //trace("coeff:%f",*coeff);
-                sum += v * (*coeff++);
                 }
             //trace("sum:%f", sum * 1000.0);
             buf[bufPtr++] = sum;
@@ -313,7 +307,8 @@ void ddcUpdate(Ddc *obj, float complex *data, int dataLen, ComplexOutputFunc *fu
                 bufPtr = 0;
                 }
             }
-        //clever way of stepping backward
+        //insert samples in reverse order, so that the MAC operation
+        //can be done forward from newest to oldest
         delayIndex = (delayIndex + size1) % size;
         }
     obj->delayIndex = delayIndex;
@@ -393,15 +388,15 @@ void resamplerSetOutRate(Resampler *obj, float outRate)
 
 void resamplerUpdate(Resampler *obj, float *data, int dataLen, FloatOutputFunc *func, void *context)
 {
-    int   size         = obj->size;
-    int   size1        = size-1;
-    float *coeffs      = obj->coeffs;
-    float *delayLine   = obj->delayLine;
-    int   delayIndex   = obj->delayIndex;
-    float ratio        = obj->ratio;
-    float acc          = obj->acc;
-    float *buf         = obj->buf;
-    int   bufPtr       = obj->bufPtr;
+    int   size       = obj->size;
+    int   size1      = size-1;
+    float *coeffs    = obj->coeffs;
+    float *delayLine = obj->delayLine;
+    int   delayIndex = obj->delayIndex;
+    float ratio      = obj->ratio;
+    float acc        = obj->acc;
+    float *buf       = obj->buf;
+    int   bufPtr     = obj->bufPtr;
     
     if (obj->updown)
         {
@@ -419,9 +414,8 @@ void resamplerUpdate(Resampler *obj, float *data, int dataLen, FloatOutputFunc *
                 int c = size;
                 while (c--)
                     {
-                    float v = delayLine[idx++];
+                    sum += delayLine[idx++] * (*coeff++);
                     idx %= size;
-                    sum += v * (*coeff++);
                     }
                 buf[bufPtr++] = sum;
                 if (bufPtr >= RESAMPLER_BUFSIZE)
@@ -449,9 +443,8 @@ void resamplerUpdate(Resampler *obj, float *data, int dataLen, FloatOutputFunc *
                 int c = size;
                 while (c--)
                     {
-                    float v = delayLine[idx++];
+                    sum += delayLine[idx++] * (*coeff++);
                     idx %= size;
-                    sum += v * (*coeff++);
                     }
                 buf[bufPtr++] = sum;
                 if (bufPtr >= RESAMPLER_BUFSIZE)
@@ -497,9 +490,8 @@ void resamplerUpdateC(Resampler *obj, float complex *data, int dataLen, ComplexO
                 int c = size;
                 while (c--)
                     {
-                    float complex v = delayLine[idx++];
+                    sum += delayLine[idx++] * (*coeff++);
                     idx %= size;
-                    sum += v * (*coeff++);
                     }
                 buf[bufPtr++] = sum;
                 if (bufPtr >= RESAMPLER_BUFSIZE)
@@ -527,9 +519,8 @@ void resamplerUpdateC(Resampler *obj, float complex *data, int dataLen, ComplexO
                 int c = size;
                 while (c--)
                     {
-                    float complex v = delayLine[idx++];
+                    sum += delayLine[idx++] * (*coeff++);
                     idx %= size;
-                    sum += v * (*coeff++);
                     }
                 buf[bufPtr++] = sum;
                 if (bufPtr >= RESAMPLER_BUFSIZE)
