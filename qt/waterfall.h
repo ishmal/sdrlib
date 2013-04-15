@@ -181,18 +181,11 @@ protected:
     virtual void paintEvent(QPaintEvent *event)
         {
         QPainter painter(this);
-        painter.drawPixmap(0, 0, image);
         int w = width();
         int h = height();
-        int center = w >> 1;
-        painter.setPen(Qt::red);
-        painter.drawLine(center, 0, center, h);
-        int pbLoX = freqToX(vfoFreq + pbLoOff);
-        int pbHiX = freqToX(vfoFreq + pbHiOff);
-        painter.fillRect(pbLoX, 0, pbHiX-pbLoX, h, pbCol);
-        int vfoX = freqToX(vfoFreq);
-        painter.setPen(Qt::green);
-        painter.drawLine(vfoX, 0, vfoX, h);
+        drawWaterfall(painter, w, h);
+        drawReticle(painter, w, h);
+        drawLegend(painter, w, h);
         }
         
     virtual void resizeEvent(QResizeEvent *event) 
@@ -266,18 +259,10 @@ protected:
         switch (event->key())
             {
             case Qt::Key_Up:
-                if (zoomLevel < 1024)
-                    {
-                    zoomLevel <<= 1;
-                    update();
-                    }
+                adjustZoomLevel(true);
                 break;
             case Qt::Key_Down:
-                if (zoomLevel > 1)
-                    {
-                    zoomLevel >>= 1;
-                    update();
-                    }
+                adjustZoomLevel(false);
                 break;
             default :
                 break;
@@ -287,6 +272,47 @@ protected:
  
  
 private:
+
+    void drawWaterfall(QPainter &painter, int w, int h)
+        {
+        painter.drawPixmap(0, 0, image);
+        }
+
+    void drawReticle(QPainter &painter, int w, int h)
+        {
+        int center = w >> 1;
+        painter.setPen(Qt::red);
+        painter.drawLine(center, 0, center, h);
+        int pbLoX = freqToX(vfoFreq + pbLoOff);
+        int pbHiX = freqToX(vfoFreq + pbHiOff);
+        painter.fillRect(pbLoX, 0, pbHiX-pbLoX, h, pbCol);
+        int vfoX = freqToX(vfoFreq);
+        painter.setPen(Qt::green);
+        painter.drawLine(vfoX, 0, vfoX, h);
+        }
+
+    void drawLegend(QPainter &painter, int w, int h)
+        {
+
+        }
+        
+    /**
+     * TODO: adjust legend granularity here
+     */         
+    void adjustZoomLevel(bool up)
+        {
+        if (up)
+            {
+            if (zoomLevel < 1024)
+                zoomLevel <<= 1;
+            }
+        else
+            {
+            if (zoomLevel > 1)
+                zoomLevel >>= 1;
+            }
+        update();
+        }
 
     TuneMode getTuneMode(int x)
         {
@@ -365,6 +391,26 @@ private:
     bool dragging;
     int zoomLevel;
 };
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 #if 0

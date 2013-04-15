@@ -1,6 +1,6 @@
 
 
-set QT5_HOME=c:\dev\qt\Qt5.0.1\5.0.1\mingw47_32
+set QT5_HOME=c:\dev\qt\Qt5.0.2\5.0.2\mingw47_32
 
 set PATH=%QT5_HOME%\bin;%PATH%
 
