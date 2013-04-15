@@ -293,7 +293,25 @@ private:
 
     void drawLegend(QPainter &painter, int w, int h)
         {
-
+        float hzPerPixel = par.getSampleRate() / zoomLevel / w;
+        trace("hz:%f", hzPerPixel);
+        float smallTickSpace = 1.0;
+        
+        float scalle = 1000.0;
+        int i = 0;
+        for ( ;
+        if (hzPerPixel > 1000.0)
+            smallTickSpace = hzPerPixel / 1000.0;
+        else if (hzPerPixel > 100.0)
+            smallTickSpace = hzPerPixel / 100.0;
+        else if (hzPerPixel > 10.0)
+            smallTickSpace = hzPerPixel / 10.0;
+        else if (hzPerPixel > 1.0)
+            smallTickSpace = hzPerPixel;
+        else if (hzPerPixel > 0.1)
+            smallTickSpace = hzPerPixel * 10.0;
+        else if (hzPerPixel > 0.1)
+            smallTickSpace = hzPerPixel * 10.0;
         }
         
     /**
