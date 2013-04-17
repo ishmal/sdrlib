@@ -51,6 +51,7 @@ class Waterfall : public QWidget
 
 public:
 
+    static const int PS_HEIGHT=60;
     static const int LEGEND_HEIGHT=16;
 
     typedef enum { TUNE_NONE=0, TUNE_LO, TUNE_VFO, TUNE_HI } TuneMode;
@@ -58,8 +59,10 @@ public:
     Waterfall(Sdr &parent) : par(parent)
         {
         resize(400, 300);
-        image = QPixmap(width(), height() - LEGEND_HEIGHT);
+        psImage = QPixmap(width(), PS_HEIGHT);
+        wfImage = QPixmap(width(), height() - PS_HEIGHT - LEGEND_HEIGHT);
         legendImage = QPixmap(width(), LEGEND_HEIGHT);
+        
         for (int i=0 ; i<256 ; i++)
             palette[i] = QColor::fromHsv(255-i, 255, 255, 255);
         pbCol = QColor(255, 255, 255, 100); 
@@ -80,17 +83,17 @@ public:
         }
         
     /**
-     * Receive a new line of power spectrum data
+     * Receive a new line of power spectrum data.  Use Bresenham's algorithm
+     * to scale the data according to the zoom level and the widget size.
      */    
     void updatePs(unsigned int *powerSpectrum, int size)
         {
         int nrSamples = size / zoomLevel;
         int startIndex = (size - nrSamples) >> 1;
         unsigned int *ps = powerSpectrum + startIndex;
-        int w = image.width();
-        int y = image.height() - 1;
-        image.scroll(0, -1, 0, 1, w, y);
-        QPainter painter(&image);
+        unsigned int *out = scaledPs;
+        int w = width();
+        int h = height();
         if (nrSamples > w)
             {
             int acc = -nrSamples;
@@ -102,29 +105,24 @@ public:
                     acc += w;
                     }
                 acc -= nrSamples;
-                unsigned int v  = *ps;
-                QColor col = palette[v>>1 & 255];
-                painter.setPen(col);
-                painter.drawPoint(x,y);
+                *out++ = *ps;
                 }
             }
         else
             {
             int acc = -w;
-            unsigned int v = *ps++;
             for (int x = 0; x < w ; x++)
                 {
                 acc += nrSamples;
                 if (acc >= 0)
                     {
-                    v = *ps++;
+                    *out++ = *ps++;
                     acc -= w;
                     }
-                QColor col = palette[v>>1 & 255];
-                painter.setPen(col);
-                painter.drawPoint(x,y);
                 }
             }
+        updateWaterfall(scaledPs, size);
+        updatePowerSpectrum(scaledPs, size);
         update();
         }
         
@@ -236,7 +234,8 @@ protected:
     virtual void resizeEvent(QResizeEvent *event) 
         {
         QSize size = event->size();
-        image = QPixmap(size.width(), size.height()-LEGEND_HEIGHT);
+        psImage = QPixmap(size.width(), PS_HEIGHT);
+        wfImage = QPixmap(size.width(), size.height() - PS_HEIGHT - LEGEND_HEIGHT);
         legendImage = QPixmap(size.width(), LEGEND_HEIGHT);
         adjust();
         }
@@ -322,7 +321,8 @@ private:
 
     void drawWaterfall(QPainter &painter, int w, int h)
         {
-        painter.drawPixmap(0, 0, image);
+        painter.drawPixmap(0, 0, psImage);
+        painter.drawPixmap(0, PS_HEIGHT, wfImage);
         }
 
     void drawReticle(QPainter &painter, int w, int h)
@@ -343,6 +343,57 @@ private:
         painter.drawPixmap(0, h - LEGEND_HEIGHT, legendImage);
         }
         
+        
+    /**
+     * Receive a new line of power spectrum data
+     */    
+    void updateWaterfall(unsigned int *powerSpectrum, int size)
+        {
+        unsigned int *ps = powerSpectrum;
+        int w = wfImage.width();
+        int h = wfImage.height();
+        wfImage.scroll(0, 1, 0, 0, w, h-1);
+        QPainter painter(&wfImage);
+        for (int x = 0 ; x < w ; x++)
+            {
+            unsigned int v  = *ps++;
+            QColor col = palette[v>>1 & 255];
+            painter.setPen(col);
+            painter.drawPoint(x,0);
+            }
+        }
+        
+
+    /**
+     * Receive a new line of power spectrum data
+     */    
+    void updatePowerSpectrum(unsigned int *powerSpectrum, int size)
+        {
+        unsigned int *ps = powerSpectrum;
+        float *avg = psAvg;
+        int w = psImage.width();
+        int h = psImage.height();
+        float fh = (float)h;
+        QPainter painter(&psImage);
+        painter.fillRect(0, 0, w, h, Qt::black);
+        QPainterPath path;
+        path.moveTo(0.0, fh);
+        for (int x=0 ; x < w ; x++)
+            {
+            unsigned int v  = *ps++;
+            float hpos = fh - (log((float) v)-3.0) * 25.0;
+            *avg = *avg*0.77 + hpos * 0.23;
+            path.lineTo((float)x, *avg);
+            avg++;
+            }
+        path.lineTo((float)w, fh);
+        path.moveTo(0.0, fh);
+        path.closeSubpath();
+        painter.setPen(Qt::green);
+        painter.drawPath(path);
+        }
+        
+
     void formatFreq(char *buf, int buflen, float f)
         {
         if (f > 1000000.0)
@@ -441,7 +492,8 @@ private:
         }
 
     Sdr &par;
-    QPixmap image;
+    QPixmap wfImage;
+    QPixmap psImage;
     QPixmap legendImage;
     QColor palette[256];
     QColor pbCol;
@@ -454,6 +506,8 @@ private:
     int zoomLevel;
     QFont legendFont;
     char legendBuf[32];
+    unsigned int scaledPs[100000];
+    float psAvg[100000];
 };
 
 
