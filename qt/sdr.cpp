@@ -78,6 +78,12 @@ Sdr::~Sdr()
    sdrDelete(sdr);
    delete waterfall;
 }
+
+
+void Sdr::adjust()
+{
+    waterfall->adjust();
+}
         
 
 

@@ -79,6 +79,8 @@ public:
         {
         return sdrSetSampleRate(sdr, rate);
         }
+        
+    void adjust();
 
 
     //#################################################################
@@ -95,6 +97,7 @@ public slots:
     void setCenterFrequency(double freq)
         {
         sdrSetCenterFrequency(sdr, freq);
+        adjust();
         status("freq: %f", freq);
         }
         
@@ -109,11 +112,13 @@ public slots:
         if (ui.startStopBtn->isChecked())
             {
             sdrStart(sdr);
+            adjust();
             status("start");
             }
         else
             {
             sdrStop(sdr);
+            adjust();
             status("stop");
             }
         }

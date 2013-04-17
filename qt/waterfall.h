@@ -44,18 +44,22 @@
 #include "freqdial.h"
 
 
+
 class Waterfall : public QWidget
 {
     Q_OBJECT
 
 public:
 
+    static const int LEGEND_HEIGHT=16;
+
     typedef enum { TUNE_NONE=0, TUNE_LO, TUNE_VFO, TUNE_HI } TuneMode;
 
     Waterfall(Sdr &parent) : par(parent)
         {
         resize(400, 300);
-        image = QPixmap(width(), height());
+        image = QPixmap(width(), height() - LEGEND_HEIGHT);
+        legendImage = QPixmap(width(), LEGEND_HEIGHT);
         for (int i=0 ; i<256 ; i++)
             palette[i] = QColor::fromHsv(255-i, 255, 255, 255);
         pbCol = QColor(255, 255, 255, 100); 
@@ -67,6 +71,8 @@ public:
         setMouseTracking(true);
         setFocusPolicy(Qt::StrongFocus);
         zoomLevel = 1;
+        legendFont = QFont("Courier", 8, QFont::Bold, true);
+        adjust();
         }
         
     virtual ~Waterfall()
@@ -171,6 +177,45 @@ public:
         return pbHiOff;
         }
 
+    void adjust()
+        {
+        float fs = par.getSampleRate();
+        float cf = par.getCenterFrequency();
+        float hzWidth = fs / zoomLevel;
+        float hzPerPixel = hzWidth / width();
+        float hpplog = ceil(log10(hzPerPixel))+ 1.0;
+        float tickScale = pow(10.0, hpplog);
+        float minFreq = cf - hzWidth * 0.5;
+        float maxFreq = cf + hzWidth * 0.5;
+        float firstTick = ceil(minFreq / tickScale) * tickScale;
+        float f = firstTick;
+        int w = legendImage.width();
+        int h = legendImage.height();
+        QPainter painter(&legendImage);
+        painter.setFont(legendFont);
+        painter.fillRect(0, 0, w, h, Qt::black);
+        painter.setPen(Qt::green);
+        int tickNr = (int) (firstTick / tickScale);
+        while (f < maxFreq)
+            {
+            int x = freqToX(f - cf);
+            if (tickNr % 10 == 0)
+                {
+                formatFreq(legendBuf, 32, f);
+                int stringWidth = painter.fontMetrics().width(legendBuf);
+                painter.drawText(x-stringWidth/2, h-7, legendBuf);
+                painter.drawLine(x, h-6, x, h);
+                } 
+            else if (tickNr % 5 == 0)
+                painter.drawLine(x, h-4, x, h); 
+            else
+                painter.drawLine(x, h-2, x, h); 
+            f += tickScale;
+            tickNr++;
+            }
+        //trace("zl:%d hz:%f hpp:%f ts:%f mf:%f firstTick:%f", zoomLevel, hzWidth, hzPerPixel, tickScale, minFreq, firstTick);
+        }
+
 signals:
 
     void frequenciesChanged(float vfoFreq, float pbLoOff, float pbHiOff);
@@ -191,7 +236,9 @@ protected:
     virtual void resizeEvent(QResizeEvent *event) 
         {
         QSize size = event->size();
-        image = QPixmap(size.width(), size.height());
+        image = QPixmap(size.width(), size.height()-LEGEND_HEIGHT);
+        legendImage = QPixmap(size.width(), LEGEND_HEIGHT);
+        adjust();
         }
 
     virtual void wheelEvent(QWheelEvent *event)
@@ -293,35 +340,30 @@ private:
 
     void drawLegend(QPainter &painter, int w, int h)
         {
-        float hzPerPixel = par.getSampleRate() / zoomLevel / w;
-        trace("hz:%f", hzPerPixel);
-        float smallTickSpace = 1.0;
-        
-        float scalle = 1000.0;
-        int i = 0;
-        for ( ;
-        if (hzPerPixel > 1000.0)
-            smallTickSpace = hzPerPixel / 1000.0;
-        else if (hzPerPixel > 100.0)
-            smallTickSpace = hzPerPixel / 100.0;
-        else if (hzPerPixel > 10.0)
-            smallTickSpace = hzPerPixel / 10.0;
-        else if (hzPerPixel > 1.0)
-            smallTickSpace = hzPerPixel;
-        else if (hzPerPixel > 0.1)
-            smallTickSpace = hzPerPixel * 10.0;
-        else if (hzPerPixel > 0.1)
-            smallTickSpace = hzPerPixel * 10.0;
+        painter.drawPixmap(0, h - LEGEND_HEIGHT, legendImage);
         }
         
+    void formatFreq(char *buf, int buflen, float f)
+        {
+        if (f > 1000000.0)
+            snprintf(buf, buflen-1, "%.6fM", f*.000001);
+        else if (f > 1000.0)
+            snprintf(buf, buflen-1, "%.3fk", f*.001);
+        else
+            snprintf(buf, buflen-1, "%.0f", f);
+        }
+        
+        
     /**
-     * TODO: adjust legend granularity here
+     * Here we adjust the zoom level.  We also calculate the "zoomScale", the
+     * closest power of 10 above the number of hertz per pixel.  This is
+     * the finest granularity of tickmarks possible.
      */         
     void adjustZoomLevel(bool up)
         {
         if (up)
             {
-            if (zoomLevel < 1024)
+            if (zoomLevel < 512)
                 zoomLevel <<= 1;
             }
         else
@@ -329,6 +371,7 @@ private:
             if (zoomLevel > 1)
                 zoomLevel >>= 1;
             }
+        adjust();
         update();
         }
 
@@ -399,6 +442,7 @@ private:
 
     Sdr &par;
     QPixmap image;
+    QPixmap legendImage;
     QColor palette[256];
     QColor pbCol;
     double vfoFreq;
@@ -408,6 +452,8 @@ private:
     TuneMode tuneMode;
     bool dragging;
     int zoomLevel;
+    QFont legendFont;
+    char legendBuf[32];
 };
 
 
