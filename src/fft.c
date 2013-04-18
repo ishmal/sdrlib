@@ -25,12 +25,14 @@
 
 
 #include <stdio.h>
+#include <string.h>
 #include <stdlib.h>
-#include <sdrlib.h>
 #include <inttypes.h>
 #include <math.h>
 
+#include "sdrlib.h"
 #include "fft.h"
+#include "private.h"
 
 /**
  * Create a new Fft instance.
@@ -116,4 +118,126 @@ void fftUpdate(Fft *fft, float complex *inbuf, int count, FftOutputFunc *func, v
         }
     fft->inPtr = inPtr;
 }
+
+
+
+
+
+typedef struct
+{
+    float complex W;
+    float complex x;
+} Bin;
+
+
+typedef struct QueueItem QueueItem;
+
+struct QueueItem
+{
+    float complex v;
+    QueueItem *next;
+};
+
+
+
+typedef struct SlidingDft SlidingDft;
+
+struct SlidingDft
+{
+    int N;
+    int size;
+    float Fs;
+    QueueItem *queue;
+    QueueItem *head;
+    Bin bins[];
+};
+
+
+void sdftSetFreqs(SlidingDft *obj, float loFreq, float hiFreq);
+
+SlidingDft *sdftCreate(int N, int size, float loFreq, float hiFreq, float sampleRate)
+{
+    SlidingDft *obj = (SlidingDft *) malloc(sizeof(SlidingDft) + size * sizeof(Bin));
+    if (!obj)
+        return NULL;
+    memset(obj, 0, sizeof(SlidingDft));
+    obj->N = N;
+    obj->size = size;
+    obj->Fs = sampleRate;
+    int queueSize = N * sizeof(QueueItem);
+    obj->queue = (QueueItem *) malloc(queueSize);
+    if (!obj->queue)
+        {
+        free(obj);
+        return NULL;
+        }
+    memset(obj->queue, 0, queueSize);
+    for (int i=0 ; i < N-1 ; i++)
+        obj->queue[i].next = &(obj->queue[i+1]);
+    obj->queue[N-1].next = obj->head;
+    obj->head = obj->queue;
+    sdftSetFreqs(obj, loFreq, hiFreq);
+    return obj;
+}
+
+void sdftDelete(SlidingDft *obj)
+{
+    if (obj)
+        {
+        free(obj->queue);
+        free(obj);
+        }
+}
+
+void sdftSetFreqs(SlidingDft *obj, float loFreq, float hiFreq)
+{
+    int size = obj->size;
+    float Fs = obj->Fs;
+    float deltaFreq = (hiFreq - loFreq) / size;
+    float f = loFreq;
+    Bin *bin = obj->bins;
+    while (size--)
+        {
+        float omega = TWOPI * f / Fs;
+        bin->W = cos(omega) + sin(omega)*I;
+        bin->x = 0.0;
+        }
+}
+
+void sdftUpdate(SlidingDft *obj, float complex *sample, int len)
+{
+    int size     = obj->size;
+    Bin *bin     = obj->bins;
+    QueueItem *q = obj->head;
+    
+    while (len--)
+        {
+        float complex v = *sample++;
+        float complex diff = v - q->v;
+        q->v = v;
+        q = q->next;
+        int count = size;
+        while (count--)
+            {
+            bin->x += diff * bin->W;
+            bin++;
+            }
+        }
+        
+    obj->head = q;
+}
+
+
+void sdftGetPowerSpectrum(SlidingDft *obj, unsigned int *out)
+{
+    int size = obj->size;
+    Bin *bin = obj->bins;
+    while (size--)
+        {
+        *out++ = (unsigned int)(20.0 * fasterlog2(1.0 + cabsf(bin->x)));
+        bin++;
+        }
+
+}
+
 

@@ -73,6 +73,9 @@ SdrLib *sdrCreate()
     sdr->mode      = MODE_FM;
     sdr->resampler = resamplerCreate(21, 44100.0, 44100.0);
     sdr->audio     = audioCreate();
+    
+    sdrSetAfGain(sdr, 0.0);
+    
     return sdr;
 }
 
@@ -312,7 +315,7 @@ static void fftOutput(unsigned int *vals, int size, void *ctx)
 {
     SdrLib *sdr = (SdrLib *)ctx;
     PowerSpectrumFunc *psFunc = sdr->psFunc;
-    (*(sdr->psFunc))(vals, size, sdr->psFuncCtx);
+    (*psFunc)(vals, size, sdr->psFuncCtx);
 }
 
 

@@ -53,7 +53,7 @@ Audio *audioCreate()
     if (!audio)
         return audio;
     audio->sampleRate = (float)SAMPLE_RATE;
-    audio->gain = 1.0;
+    audio->gain = 0.0;
     int elemSize = AUDIO_FRAMES_PER_BUFFER * sizeof(float);
     audio->ringBuffer = ringbuffer_create(1024, elemSize);
     if (!audio->ringBuffer)

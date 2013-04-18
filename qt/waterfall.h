@@ -54,7 +54,7 @@ public:
     static const int PS_HEIGHT=60;
     static const int LEGEND_HEIGHT=16;
 
-    typedef enum { TUNE_NONE=0, TUNE_LO, TUNE_VFO, TUNE_HI } TuneMode;
+    typedef enum { TUNE_NONE=0, TUNE_LO, TUNE_VFO, TUNE_HI, TUNE_LEGEND } TuneMode;
 
     Waterfall(Sdr &parent) : par(parent)
         {
@@ -131,14 +131,14 @@ public:
         qDebug() << msg ;
         }
         
-    void setVfoFreq(double val)
+    void setVfoFreq(float val)
         {
         vfoFreq = val;
         emit frequenciesChanged(vfoFreq, pbLoOff, pbHiOff);
         update();
         }
 
-    double getVfoFreq()
+    float getVfoFreq()
         {
         return vfoFreq;
         }
@@ -181,6 +181,7 @@ public:
         float cf = par.getCenterFrequency();
         float hzWidth = fs / zoomLevel;
         float hzPerPixel = hzWidth / width();
+        //Redraw the legend
         float hpplog = ceil(log10(hzPerPixel))+ 1.0;
         float tickScale = pow(10.0, hpplog);
         float minFreq = cf - hzWidth * 0.5;
@@ -212,6 +213,14 @@ public:
             tickNr++;
             }
         //trace("zl:%d hz:%f hpp:%f ts:%f mf:%f firstTick:%f", zoomLevel, hzWidth, hzPerPixel, tickScale, minFreq, firstTick);
+ 
+        //Check to see if VFO is outside tuning area
+        float minVfo = -hzWidth * 0.45;
+        float maxVfo =  hzWidth * 0.45;
+        if (vfoFreq < minVfo)
+            setVfoFreq(minVfo);
+        else if (vfoFreq > maxVfo)
+            setVfoFreq(maxVfo);
         }
 
 signals:
@@ -253,6 +262,7 @@ protected:
     virtual void mouseMoveEvent(QMouseEvent *event)
         {
         int x = event->pos().x();
+        int y = event->pos().y();
         float freq = xToFreq(x);
         switch (tuneMode)
             {
@@ -273,7 +283,7 @@ protected:
                 }
             default:
                 {
-                TuneMode currMode = getTuneMode(x);
+                TuneMode currMode = getTuneMode(x, y);
                 if (currMode == hoverMode)
                     return;
                 hoverMode = currMode;
@@ -287,6 +297,9 @@ protected:
                         break;
                     case TUNE_HI : 
                         setCursor(Qt::SizeHorCursor);
+                        break;
+                    case TUNE_LEGEND : 
+                        setCursor(Qt::ClosedHandCursor);
                         break;
                     default : 
                         setCursor(Qt::ArrowCursor);
@@ -382,7 +395,7 @@ private:
             {
             unsigned int v  = *ps++;
             float hpos = fh - (log((float) v)-3.0) * 25.0;
-            *avg = *avg*0.77 + hpos * 0.23;
+            *avg = *avg*0.8 + hpos * 0.2;
             path.lineTo((float)x, *avg);
             avg++;
             }
@@ -426,19 +439,24 @@ private:
         update();
         }
 
-    TuneMode getTuneMode(int x)
+    TuneMode getTuneMode(int x, int y)
         {
-        int pbLoX = freqToX(vfoFreq + pbLoOff);
-        int vfoX  = freqToX(vfoFreq);
-        int pbHiX = freqToX(vfoFreq + pbHiOff);
-        if (x >= vfoX-4 && x <= vfoX+4)
-            return TUNE_VFO;
-        else if (x >= pbLoX-3 && x <= pbLoX+3)
-            return TUNE_LO;
-        else if (x >= pbHiX-3 && x <= pbHiX+3)
-            return TUNE_HI;
+        if (y > height() - LEGEND_HEIGHT)
+            {
+            return TUNE_LEGEND;
+            }
         else
-            return TUNE_NONE;
+            {
+            int vfoX  = freqToX(vfoFreq);
+            if (x >= vfoX-5 && x <= vfoX+5)
+                return TUNE_VFO;
+            else if (x >= vfoX-15 && x <= vfoX-5)
+                return TUNE_LO;
+            else if (x >= vfoX+5 && x <= vfoX+15)
+                return TUNE_HI;
+            else
+                return TUNE_NONE;
+            }
         }
 
     float xToFreq(int x)
@@ -497,9 +515,9 @@ private:
     QPixmap legendImage;
     QColor palette[256];
     QColor pbCol;
-    double vfoFreq;
-    double pbLoOff;
-    double pbHiOff;
+    float vfoFreq;
+    float pbLoOff;
+    float pbHiOff;
     TuneMode hoverMode;
     TuneMode tuneMode;
     bool dragging;

@@ -11,15 +11,15 @@
    </rect>
   </property>
   <property name="windowTitle">
-   <string>Sdr Player</string>
+   <string>Sdrlib Radio</string>
   </property>
   <widget class="QWidget" name="centralwidget">
    <widget class="QDoubleSpinBox" name="freqOffsetBox">
     <property name="geometry">
      <rect>
-      <x>190</x>
+      <x>10</x>
       <y>220</y>
-      <width>261</width>
+      <width>131</width>
       <height>24</height>
      </rect>
     </property>
@@ -71,7 +71,7 @@
      <rect>
       <x>50</x>
       <y>170</y>
-      <width>391</width>
+      <width>291</width>
       <height>41</height>
      </rect>
     </property>
@@ -164,7 +164,7 @@
    <widget class="QSlider" name="rfGainSlider">
     <property name="geometry">
      <rect>
-      <x>10</x>
+      <x>290</x>
       <y>220</y>
       <width>160</width>
       <height>22</height>
