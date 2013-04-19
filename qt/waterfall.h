@@ -257,6 +257,8 @@ protected:
         {
         //very simple
         tuneMode = hoverMode;
+        mouseDownX = event->pos().x();
+        mouseDownFreq = par.getCenterFrequency();
         }
 
     virtual void mouseMoveEvent(QMouseEvent *event)
@@ -279,6 +281,11 @@ protected:
             case TUNE_HI:
                 {       
                 setPbHiOff(freq - vfoFreq);
+                break;
+                }
+            case TUNE_LEGEND:
+                {      
+                moveCenterFrequency(x); 
                 break;
                 }
             default:
@@ -393,8 +400,8 @@ private:
         path.moveTo(0.0, fh);
         for (int x=0 ; x < w ; x++)
             {
-            unsigned int v  = *ps++;
-            float hpos = fh - (log((float) v)-3.0) * 25.0;
+            unsigned int v  = (*ps++) >> 2;
+            float hpos = fh - v;
             *avg = *avg*0.8 + hpos * 0.2;
             path.lineTo((float)x, *avg);
             avg++;
@@ -478,6 +485,17 @@ private:
         int x = (int)(pos * (float)width());
         return x;
         }
+        
+    void moveCenterFrequency(int x)
+        {
+        float fw = (float)width();
+        float fx = (float)(x - mouseDownX);
+        float freqDiff =  fx/fw * par.getSampleRate() / (float) zoomLevel;
+
+        float newFreq = mouseDownFreq - freqDiff;
+        //trace("cf:%f diff:%f new:%f", mouseDownFreq, freqDiff, newFreq);
+        par.setCenterFrequency(newFreq);
+        }
 
 
     void status(const char *format, ...)
@@ -520,7 +538,8 @@ private:
     float pbHiOff;
     TuneMode hoverMode;
     TuneMode tuneMode;
-    bool dragging;
+    int mouseDownX;
+    float mouseDownFreq;
     int zoomLevel;
     QFont legendFont;
     char legendBuf[32];
