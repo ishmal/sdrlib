@@ -99,9 +99,11 @@ public slots:
      */
     void setCenterFrequency(double freq);
         
-    void setDdcFreqs(float vfoFreq, float pbLoOff, float pbHiOff)
+    void setDdcFreqs(float vfoFreqParm, float pbLoOff, float pbHiOff)
         {
+        vfoFreq = vfoFreqParm;
         sdrSetDdcFreqs(sdr, vfoFreq, pbLoOff, pbHiOff);
+        showVfoFreq();
         status("ddc: %f %f %f", vfoFreq, pbLoOff, pbHiOff);
         }
     
@@ -186,12 +188,20 @@ protected:
 
 private:
 
+    void showVfoFreq()
+        {
+        char freqstr[32];
+        snprintf(freqstr, 31, "%ld", (long)(getCenterFrequency() + vfoFreq));
+        ui.vfoLabel->setText(freqstr);
+        }
+
 
     double freqOffset;
     Ui_MainWindow ui;
     SdrLib *sdr;
     Waterfall *waterfall;
     FreqDial *freqDial;
+    float vfoFreq;
     static const int STATBUFSIZE = 256;
     char statbuf[STATBUFSIZE + 1];
 

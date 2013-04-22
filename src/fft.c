@@ -172,7 +172,8 @@ SlidingDft *sdftCreate(int N, int size, float loFreq, float hiFreq, float sample
         return NULL;
         }
     memset(obj->queue, 0, queueSize);
-    for (int i=0 ; i < N-1 ; i++)
+    int i=0;
+    for ( ; i < N-1 ; i++)
         obj->queue[i].next = &(obj->queue[i+1]);
     obj->queue[N-1].next = obj->head;
     obj->head = obj->queue;

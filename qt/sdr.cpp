@@ -90,6 +90,7 @@ void Sdr::setCenterFrequency(double freq)
 {
     sdrSetCenterFrequency(sdr, freq);
     freqDial->setFrequency(freq);
+    showVfoFreq();
     adjust();
     status("freq: %f", freq);
 }
