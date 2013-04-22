@@ -71,8 +71,8 @@ SdrLib *sdrCreate()
     sdr->demodUsb  = demodUsbCreate();
     sdr->demod     = sdr->demodFm;
     sdr->mode      = MODE_FM;
-    sdr->resampler = resamplerCreate(21, 44100.0, 44100.0);
     sdr->audio     = audioCreate();
+    sdr->resampler = resamplerCreate(21, sdr->audio->sampleRate, sdr->audio->sampleRate);
     
     sdrSetAfGain(sdr, 0.0);
     

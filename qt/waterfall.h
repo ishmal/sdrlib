@@ -90,12 +90,11 @@ public:
      */    
     void updatePs(unsigned int *powerSpectrum, int size)
         {
-        int nrSamples = size * zoomScale;
+        int nrSamples = (int)(size * zoomScale);
         int startIndex = (size - nrSamples) >> 1;
         unsigned int *ps = powerSpectrum + startIndex;
         unsigned int *out = scaledPs;
         int w = width();
-        int h = height();
         if (nrSamples > w)
             {
             int acc = -nrSamples;
@@ -113,12 +112,14 @@ public:
         else
             {
             int acc = -w;
+            unsigned int v = 0;
             for (int x = 0; x < w ; x++)
                 {
+                *out++ = v;
                 acc += nrSamples;
                 if (acc >= 0)
                     {
-                    *out++ = (*ps++) * psGain;
+                    v = (*ps++) * psGain;
                     acc -= w;
                     }
                 }
@@ -324,13 +325,13 @@ protected:
                 switch (hoverMode)
                     {
                     case TUNE_LO : 
-                        setCursor(Qt::SizeHorCursor);
+                        setCursor(Qt::SizeBDiagCursor);
                         break;
                     case TUNE_VFO : 
-                        setCursor(Qt::SizeAllCursor);
+                        setCursor(Qt::SizeHorCursor);
                         break;
                     case TUNE_HI : 
-                        setCursor(Qt::SizeHorCursor);
+                        setCursor(Qt::SizeFDiagCursor);
                         break;
                     case TUNE_LEGEND : 
                         setCursor(Qt::ClosedHandCursor);
@@ -429,7 +430,7 @@ private:
             {
             unsigned int v  = (*ps++) >> 2;
             float hpos = fh - v;
-            *avg = *avg*0.8 + hpos * 0.2;
+            *avg = *avg*0.85 + hpos * 0.15;
             path.lineTo((float)x, *avg);
             avg++;
             }
@@ -473,9 +474,17 @@ private:
         else
             {
             int vfoX  = freqToX(vfoFreq);
-            if (x >= vfoX-25 && x <= vfoX-5)
+            int loX = freqToX(pbLo);
+            if (loX > -10)
+                loX = -10;
+            loX += vfoX;
+            int hiX = freqToX(vfoFreq+pbHi);
+            if (hiX > 10)
+                hiX = 10;
+            hiX += vfoX;
+            if (x >= loX-25 && x <= loX)
                 return TUNE_LO;
-            else if (x >= vfoX+5 && x <= vfoX+25)
+            else if (x >= hiX && x <= hiX+25)
                 return TUNE_HI;
             else if (x >= vfoX-5 && x <= vfoX+5)
                 return TUNE_VFO;

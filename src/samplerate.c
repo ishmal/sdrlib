@@ -35,7 +35,7 @@
  */
 static void firLPCoeffs(int size, float *coeffs, float cutoffFreq, float sampleRate)
 {
-    float omega = 2.0 * PI * cutoffFreq / sampleRate;
+    float omega = TWOPI * cutoffFreq / sampleRate;
     int center = (size - 1) / 2;
     int idx = 0;
     for ( ; idx < size ; idx++)
@@ -54,9 +54,7 @@ static void firBPCoeffs(int size, float *coeffs, float loCutoffFreq, float hiCut
     for ( ; idx < size ; idx++)
         {
         int i = idx - center;
-        coeffs[idx] = (i == 0) ? 
-            1.0 - (omega2-omega1) / PI :
-            (sin(omega2*i) - sin(omega1 * i)) / (PI * i);
+        coeffs[idx] = (i == 0) ? (omega2-omega1) / PI : (sin(omega2*i) - sin(omega1 * i)) / (PI * i);
         }
 }
 
@@ -166,8 +164,7 @@ Ddc *ddcCreate(int size, float vfoFreq, float pbLoOff, float pbHiOff, float samp
     obj->delayIndex = 0;
     obj->acc        = -1.0;
     obj->bufPtr     = 0;
-    //obj->vfoPhase   = 0.0 + 1.0 * I;
-    obj->vfoPhase   = 1.0;
+    obj->vfoPhase   = 0.0 + 1.0 * I;
     return obj;
 }
 
@@ -190,7 +187,7 @@ void ddcSetFreqs(Ddc *obj, float vfoFreq, float pbLoOff, float pbHiOff)
     obj->outRate = maxOff * 2.0;
     obj->ratio = obj->outRate/obj->inRate;
     float omega = TWOPI * vfoFreq / obj->inRate;
-    obj->vfoFreq = cos(omega) + sin(omega) * I;
+    obj->vfoFreq = cos(omega) - sin(omega) * I;
 }
 
 

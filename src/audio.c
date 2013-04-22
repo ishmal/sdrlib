@@ -36,7 +36,7 @@
 #include "audio.h"
 #include "private.h"
 
-#define SAMPLE_RATE 44100
+#define SAMPLE_RATE 44100.0
 
 
 
@@ -52,7 +52,7 @@ Audio *audioCreate()
     Audio *audio = (Audio *)malloc(sizeof(Audio));
     if (!audio)
         return audio;
-    audio->sampleRate = (float)SAMPLE_RATE;
+    audio->sampleRate = SAMPLE_RATE;
     audio->gain = 0.0;
     int elemSize = AUDIO_FRAMES_PER_BUFFER * sizeof(float);
     audio->ringBuffer = ringbuffer_create(1024, elemSize);
@@ -82,7 +82,7 @@ Audio *audioCreate()
             &parms,
             SAMPLE_RATE,
             AUDIO_FRAMES_PER_BUFFER,
-            paClipOff,      /* we won't output out of range samples so don't bother clipping them */
+            paNoFlag,
             paCallback,
             (void *)audio );
     if( err != paNoError )
