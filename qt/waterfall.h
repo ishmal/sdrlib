@@ -51,7 +51,7 @@ class Waterfall : public QWidget
 
 public:
 
-    static const int PS_HEIGHT=60;
+    static const int PS_HEIGHT=70;
     static const int LEGEND_HEIGHT=16;
 
     typedef enum { TUNE_NONE=0, TUNE_LO, TUNE_VFO, TUNE_HI, TUNE_LEGEND } TuneMode;
@@ -67,14 +67,16 @@ public:
             palette[i] = QColor::fromHsv(255-i, 255, 255, 255);
         pbCol = QColor(255, 255, 255, 100); 
         vfoFreq   =      0.0;
-        pbLoOff   = -50000.0;
-        pbHiOff   =  50000.0;
+        pbLo   = -50000.0;
+        pbHi   =  50000.0;
         hoverMode = TUNE_NONE;
         tuneMode  = TUNE_NONE;
         setMouseTracking(true);
         setFocusPolicy(Qt::StrongFocus);
+        psGain = 1.0;
         zoomLevel = 1;
-        legendFont = QFont("Courier", 8, QFont::Bold, true);
+        zoomScale = 1.0;
+        legendFont = QFont("Ariel", 8, QFont::SansSerif, true);
         adjust();
         }
         
@@ -88,7 +90,7 @@ public:
      */    
     void updatePs(unsigned int *powerSpectrum, int size)
         {
-        int nrSamples = size / zoomLevel;
+        int nrSamples = size * zoomScale;
         int startIndex = (size - nrSamples) >> 1;
         unsigned int *ps = powerSpectrum + startIndex;
         unsigned int *out = scaledPs;
@@ -105,7 +107,7 @@ public:
                     acc += w;
                     }
                 acc -= nrSamples;
-                *out++ = *ps;
+                *out++ = *ps * psGain;
                 }
             }
         else
@@ -116,7 +118,7 @@ public:
                 acc += nrSamples;
                 if (acc >= 0)
                     {
-                    *out++ = *ps++;
+                    *out++ = (*ps++) * psGain;
                     acc -= w;
                     }
                 }
@@ -134,7 +136,7 @@ public:
     void setVfoFreq(float val)
         {
         vfoFreq = val;
-        emit frequenciesChanged(vfoFreq, pbLoOff, pbHiOff);
+        emit frequenciesChanged(vfoFreq, pbLo, pbHi);
         update();
         }
 
@@ -143,43 +145,63 @@ public:
         return vfoFreq;
         }
 
-    void setPbLoOff(double val)
+    void setPbLo(double val)
         {
-        if (val < pbHiOff)
+        if (val < pbHi)
             {
-            pbLoOff = val;
-            status("Bw: %f", pbHiOff - pbLoOff);
-            emit frequenciesChanged(vfoFreq, pbLoOff, pbHiOff);
+            pbLo = val;
+            status("Bw: %f", pbHi - pbLo);
+            emit frequenciesChanged(vfoFreq, pbLo, pbHi);
             update();
             }
         }
 
-    double getPbLoOff()
+    double getPbLo()
         {
-        return pbLoOff;
+        return pbLo;
         }
 
-    void setPbHiOff(double val)
+    void setPbHi(double val)
         {
-        if (val > pbLoOff)
+        if (val > pbLo)
             {
-            pbHiOff = val;
-            status("Bw: %f", pbHiOff - pbLoOff);
-            emit frequenciesChanged(vfoFreq, pbLoOff, pbHiOff);
+            pbHi = val;
+            status("Bw: %f", pbHi - pbLo);
+            emit frequenciesChanged(vfoFreq, pbLo, pbHi);
             update();
             }
         }
 
-    double getPbHiOff()
+    double getPbHi()
         {
-        return pbHiOff;
+        return pbHi;
+        }
+        
+    void setPsGain(float val)
+        {
+        psGain = 5.0 * val;
+        }
+        
+    /**
+     * Here we adjust the zoom level.  We also calculate the "zoomScale", the
+     * actual value we multiply by the sampleRate and/or N to get our window.
+     */         
+    void setZoomLevel(int level)
+        {
+        if (level >= 0 && level <=10)
+            {
+            zoomLevel = level;
+            zoomScale = 1.0 / (1<<level);
+            }
+        adjust();
+        update();
         }
 
     void adjust()
         {
         float fs = par.getSampleRate();
         float cf = par.getCenterFrequency();
-        float hzWidth = fs / zoomLevel;
+        float hzWidth = fs * zoomScale;
         float hzPerPixel = hzWidth / width();
         //Redraw the legend
         float hpplog = ceil(log10(hzPerPixel))+ 1.0;
@@ -225,7 +247,7 @@ public:
 
 signals:
 
-    void frequenciesChanged(float vfoFreq, float pbLoOff, float pbHiOff);
+    void frequenciesChanged(float vfoFreq, float pbLo, float pbHi);
 
 
 protected:
@@ -256,36 +278,41 @@ protected:
     virtual void mousePressEvent(QMouseEvent *event)
         {
         //very simple
-        tuneMode = hoverMode;
-        mouseDownX = event->pos().x();
-        mouseDownFreq = par.getCenterFrequency();
+        tuneMode     = hoverMode;
+        mouseDownX   = event->pos().x();
+        mouseDownCf  = par.getCenterFrequency();
+        mouseDownLo  = pbLo;
+        mouseDownVfo = vfoFreq;
+        mouseDownHi  = pbHi;
         }
 
     virtual void mouseMoveEvent(QMouseEvent *event)
         {
         int x = event->pos().x();
         int y = event->pos().y();
-        float freq = xToFreq(x);
+        float fw = (float)width();
+        float fx = (float)(x - mouseDownX);
+        float freqDiff =  fx/fw * par.getSampleRate() * zoomScale;
         switch (tuneMode)
             {
             case TUNE_LO:
                 {
-                setPbLoOff(freq - vfoFreq);
+                setPbLo(mouseDownLo + freqDiff);
                 break;
                 }
             case TUNE_VFO:
                 {
-                setVfoFreq(freq);
+                setVfoFreq(mouseDownVfo + freqDiff);
                 break;
                 }
             case TUNE_HI:
                 {       
-                setPbHiOff(freq - vfoFreq);
+                setPbHi(mouseDownHi + freqDiff);
                 break;
                 }
             case TUNE_LEGEND:
                 {      
-                moveCenterFrequency(x); 
+                par.setCenterFrequency(mouseDownCf - freqDiff);  //other direction
                 break;
                 }
             default:
@@ -350,8 +377,8 @@ private:
         int center = w >> 1;
         painter.setPen(Qt::red);
         painter.drawLine(center, 0, center, h);
-        int pbLoX = freqToX(vfoFreq + pbLoOff);
-        int pbHiX = freqToX(vfoFreq + pbHiOff);
+        int pbLoX = freqToX(vfoFreq + pbLo);
+        int pbHiX = freqToX(vfoFreq + pbHi);
         painter.fillRect(pbLoX, 0, pbHiX-pbLoX, h, pbCol);
         int vfoX = freqToX(vfoFreq);
         painter.setPen(Qt::green);
@@ -425,25 +452,16 @@ private:
         }
         
         
-    /**
-     * Here we adjust the zoom level.  We also calculate the "zoomScale", the
-     * closest power of 10 above the number of hertz per pixel.  This is
-     * the finest granularity of tickmarks possible.
-     */         
     void adjustZoomLevel(bool up)
         {
         if (up)
             {
-            if (zoomLevel < 512)
-                zoomLevel <<= 1;
+            setZoomLevel(zoomLevel + 1);
             }
         else
             {
-            if (zoomLevel > 1)
-                zoomLevel >>= 1;
+            setZoomLevel(zoomLevel - 1);
             }
-        adjust();
-        update();
         }
 
     TuneMode getTuneMode(int x, int y)
@@ -455,12 +473,12 @@ private:
         else
             {
             int vfoX  = freqToX(vfoFreq);
-            if (x >= vfoX-5 && x <= vfoX+5)
-                return TUNE_VFO;
-            else if (x >= vfoX-15 && x <= vfoX-5)
+            if (x >= vfoX-25 && x <= vfoX-5)
                 return TUNE_LO;
-            else if (x >= vfoX+5 && x <= vfoX+15)
+            else if (x >= vfoX+5 && x <= vfoX+25)
                 return TUNE_HI;
+            else if (x >= vfoX-5 && x <= vfoX+5)
+                return TUNE_VFO;
             else
                 return TUNE_NONE;
             }
@@ -472,7 +490,7 @@ private:
         float fx = (float)x;
         float proportion = fx/fw;
         float pos = proportion - 0.5;
-        float f = pos * par.getSampleRate() / (float) zoomLevel;
+        float f = pos * par.getSampleRate() * zoomScale;
         //status("fw:%f fx:%f pos:%f vfo:%f\n", fw, fx, pos, f);
         return f;
         }
@@ -480,24 +498,12 @@ private:
 
     int freqToX(float freq)
         {
-        float proportion = freq / par.getSampleRate() * (float) zoomLevel;
+        float proportion = freq / par.getSampleRate() / zoomScale;
         float pos = proportion + 0.5;
         int x = (int)(pos * (float)width());
         return x;
         }
         
-    void moveCenterFrequency(int x)
-        {
-        float fw = (float)width();
-        float fx = (float)(x - mouseDownX);
-        float freqDiff =  fx/fw * par.getSampleRate() / (float) zoomLevel;
-
-        float newFreq = mouseDownFreq - freqDiff;
-        //trace("cf:%f diff:%f new:%f", mouseDownFreq, freqDiff, newFreq);
-        par.setCenterFrequency(newFreq);
-        }
-
-
     void status(const char *format, ...)
         {
         va_list args;
@@ -534,17 +540,22 @@ private:
     QColor palette[256];
     QColor pbCol;
     float vfoFreq;
-    float pbLoOff;
-    float pbHiOff;
+    float pbLo;
+    float pbHi;
     TuneMode hoverMode;
     TuneMode tuneMode;
     int mouseDownX;
-    float mouseDownFreq;
+    float mouseDownCf;
+    float mouseDownLo;
+    float mouseDownVfo;
+    float mouseDownHi;
     int zoomLevel;
+    float zoomScale;
     QFont legendFont;
     char legendBuf[32];
     unsigned int scaledPs[100000];
     float psAvg[100000];
+    float psGain;
 };
 
 

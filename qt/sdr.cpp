@@ -76,6 +76,7 @@ Sdr::Sdr()
 Sdr::~Sdr()
 {
    sdrDelete(sdr);
+   delete freqDial;
    delete waterfall;
 }
 
@@ -84,7 +85,28 @@ void Sdr::adjust()
 {
     waterfall->adjust();
 }
+
+void Sdr::setCenterFrequency(double freq)
+{
+    sdrSetCenterFrequency(sdr, freq);
+    freqDial->setFrequency(freq);
+    adjust();
+    status("freq: %f", freq);
+}
+
         
+void Sdr::adjustPsGain(int scale)
+{
+    float fscale = ((float)scale) / 100.0;
+    waterfall->setPsGain(fscale);
+    status("ps scale:%f", fscale);
+}
+
+void Sdr::adjustPsZoom(int zoom)
+{
+    waterfall->setZoomLevel(zoom);
+    status("ps zoom:%d", zoom);
+}
 
 
 

@@ -94,12 +94,10 @@ public slots:
         return sdrGetCenterFrequency(sdr);
         }
     
-    void setCenterFrequency(double freq)
-        {
-        sdrSetCenterFrequency(sdr, freq);
-        adjust();
-        status("freq: %f", freq);
-        }
+    /**
+     * References waterfall and dial.  Look in .cpp
+     */
+    void setCenterFrequency(double freq);
         
     void setDdcFreqs(float vfoFreq, float pbLoOff, float pbHiOff)
         {
@@ -142,6 +140,16 @@ public slots:
         freqOffset = val;
         status("offset:%f", freqOffset);
         }
+
+    /**
+     * References waterfall.  Look in .cpp
+     */
+    void adjustPsGain(int scale);
+
+    /**
+     * References waterfall.  Look in .cpp
+     */
+    void adjustPsZoom(int zoomLevel);
 
     void modeAm(bool val)
         {
