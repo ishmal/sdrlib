@@ -17,7 +17,7 @@
    <widget class="QDoubleSpinBox" name="freqOffsetBox">
     <property name="geometry">
      <rect>
-      <x>10</x>
+      <x>100</x>
       <y>240</y>
       <width>131</width>
       <height>24</height>
@@ -26,11 +26,17 @@
     <property name="toolTip">
      <string>Adjusts what to add to displayed frequency</string>
     </property>
+    <property name="alignment">
+     <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+    </property>
+    <property name="minimum">
+     <double>-300000000.000000000000000</double>
+    </property>
     <property name="maximum">
      <double>300000000.000000000000000</double>
     </property>
     <property name="value">
-     <double>100000000.000000000000000</double>
+     <double>0.000000000000000</double>
     </property>
    </widget>
    <widget class="QWidget" name="verticalLayoutWidget">
@@ -235,7 +241,7 @@
      <x>0</x>
      <y>0</y>
      <width>685</width>
-     <height>21</height>
+     <height>22</height>
     </rect>
    </property>
    <widget class="QMenu" name="menuDevice">

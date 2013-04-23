@@ -91,7 +91,7 @@ public slots:
 
     double getCenterFrequency()
         {
-        return sdrGetCenterFrequency(sdr);
+        return sdrGetCenterFrequency(sdr) - freqOffset;
         }
     
     /**

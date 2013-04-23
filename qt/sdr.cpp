@@ -88,7 +88,7 @@ void Sdr::adjust()
 
 void Sdr::setCenterFrequency(double freq)
 {
-    sdrSetCenterFrequency(sdr, freq);
+    sdrSetCenterFrequency(sdr, freq+freqOffset);
     freqDial->setFrequency(freq);
     showVfoFreq();
     adjust();
