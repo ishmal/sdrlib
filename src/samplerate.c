@@ -149,6 +149,47 @@ void decimatorUpdate(Decimator *dec, float complex *data, int dataLen, ComplexOu
 //#  D D C
 //########################################################################
 
+DelayVal *delayCreate(int size)
+{
+    int allocSize = size * sizeof(DelayVal);
+    DelayVal *xs = (DelayVal *)malloc(allocSize);
+    if (!xs)
+        return NULL;
+    memset(xs, 0, allocSize);
+    //initialization. slow and verbose, but clear
+    int i = 0;
+    for ( ; i < size ; i++)
+        {
+        if (i==0)
+            {
+            xs[i].prev = &(xs[size-1]);
+            xs[i].next = &(xs[i+1]);
+            }
+        else if (i==size-1)
+            {
+            xs[i].prev = &(xs[i-1]);
+            xs[i].next = xs;
+            }
+        else
+            {
+            xs[i].prev = &(xs[i-1]);
+            xs[i].next = &(xs[i+1]);
+            }
+        }
+    return xs;
+}
+
+
+void delayDelete(DelayVal *obj)
+{
+    if (obj)
+        {
+        free(obj);
+        }
+}
+
+
+
 Ddc *ddcCreate(int size, float vfoFreq, float pbLoOff, float pbHiOff, float sampleRate)
 {
     Ddc *obj = (Ddc *)malloc(sizeof(Ddc));
@@ -156,12 +197,21 @@ Ddc *ddcCreate(int size, float vfoFreq, float pbLoOff, float pbHiOff, float samp
     size |= 1;
     obj->size = size;
     obj->coeffs = (float *)malloc(size * sizeof(float));
+    if (!obj->coeffs)
+        {
+        free(obj);
+        return NULL;
+        }
+    obj->delayLine  = delayCreate(size);
+    if (!obj->delayLine)
+        {
+        free(obj->coeffs);
+        free(obj);
+        return NULL;
+        }
+    obj->head = obj->delayLine;
     obj->inRate = sampleRate;
     ddcSetFreqs(obj, vfoFreq, pbLoOff, pbHiOff);
-    int delayLineSize = size * sizeof(float complex);
-    obj->delayLine  = (float complex *)malloc(delayLineSize);
-    memset(obj->delayLine, 0, delayLineSize);
-    obj->delayIndex = 0;
     obj->acc        = -1.0;
     obj->bufPtr     = 0;
     obj->vfoPhase   = 0.0 + 1.0 * I;
@@ -268,8 +318,7 @@ void ddcUpdate(Ddc *obj, float complex *data, int dataLen, ComplexOutputFunc *fu
     int   size         = obj->size;
     int   size1        = size - 1;
     float *coeffs      = obj->coeffs;
-    float complex *delayLine = obj->delayLine;
-    int   delayIndex   = obj->delayIndex;
+    DelayVal *head     = obj->head;
     float ratio        = obj->ratio;
     float acc          = obj->acc;
     float complex *buf = obj->buf;
@@ -280,21 +329,21 @@ void ddcUpdate(Ddc *obj, float complex *data, int dataLen, ComplexOutputFunc *fu
         //advance the VFO and convolve the input stream
         obj->vfoPhase *= obj->vfoFreq;
         float complex sample = (*data++) * obj->vfoPhase;
-        delayLine[delayIndex] = sample;
+        head->c = sample;
         //perform our fractional decimation
-        //increment the ratio until
+        //do the Bresenham's thing
         acc += ratio;
         if (acc > 0.0)
             {
             acc -= 1.0;
             float complex sum = 0.0;
-            int idx = delayIndex;
+            DelayVal *v = head;
             float *coeff = coeffs; 
             int c = size;
             while (c--)
                 {
-                sum += delayLine[idx++] * (*coeff++);
-                idx %= size;
+                sum += v->c * (*coeff++);
+                v = v->prev;
                 }
             //trace("sum:%f", sum * 1000.0);
             buf[bufPtr++] = sum;
@@ -304,12 +353,10 @@ void ddcUpdate(Ddc *obj, float complex *data, int dataLen, ComplexOutputFunc *fu
                 bufPtr = 0;
                 }
             }
-        //insert samples in reverse order, so that the MAC operation
-        //can be done forward from newest to oldest
-        delayIndex = (delayIndex + size1) % size;
+        head = head->next;
         }
-    obj->delayIndex = delayIndex;
-    obj->acc = acc;
+    obj->head = head;
+    obj->acc  = acc;
     obj->bufPtr = bufPtr;
 }
 

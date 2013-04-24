@@ -90,6 +90,23 @@ void decimatorUpdate(Decimator *dec, float complex *data, int dataLen, ComplexOu
 #define DDC_BUFSIZE (16384)
 
 
+typedef struct DelayVal DelayVal;
+
+
+struct DelayVal
+{
+    DelayVal *prev;    
+    DelayVal *next;    
+    float f;
+    float complex c;    
+};
+
+
+DelayVal *delayCreate(int size);
+
+void delayDelete(DelayVal *obj);
+
+
 /**
  *
  */
@@ -97,8 +114,8 @@ struct Ddc
 {
     int   size;
     float *coeffs;
-    float complex *delayLine;
-    int   delayIndex;
+    DelayVal *delayLine;
+    DelayVal *head;
     float ratio;
     float inRate;
     float outRate;
