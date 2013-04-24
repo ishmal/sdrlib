@@ -315,6 +315,88 @@ void ddcUpdate(Ddc *obj, float complex *data, int dataLen, ComplexOutputFunc *fu
 
 
 //########################################################################
+//#  C I C
+//########################################################################
+
+#if 0
+
+typedef struct Cic Cic;
+
+struct Cic
+{
+    int ri, 
+    long lastItgr[4];
+    long comb[4];
+    long lastComb[4]
+    long last2Comb[4];
+    float ratio;
+    float acc;
+};
+
+/*
+     integrator1 = integrator1 + xx ;
+	 integrator2 = integrator2 + integrator1 ;
+	 integrator3 = integrator3 + integrator2 ;
+	 integrator4 = integrator4 + integrator3 ;
+	 
+	 downsample_clock++ ;
+	 if ((downsample_clock & 0x03) == 0) //modulo 4
+	 begin
+		comb1 = integrator4 - last2_integrator4 ;
+    	comb2 = comb1 - last2_comb1 ;
+    	comb3 = comb2 - last2_comb2 ;
+    	yy = (int)((comb3 - last2_comb3)>>16) ;
+		// update state
+    	last2_integrator4 = last_integrator4 ;
+    	last_integrator4 = integrator4 ;
+    	last2_comb1 = last_comb1 ;
+    	last_comb1 = comb1;
+    	last2_comb2 = last_comb2 ;
+    	last_comb2 = comb2;
+    	last2_comb3 = last_comb3 ;
+    	last_comb3 = comb3;
+*/
+
+Cic *cicCreate(float inRate, float outRate)
+{
+    Cic *obj = (Cic *)malloc(sizeof (Cic));
+    if (!obj)
+        return NULL;
+    memset(obj, 0, sizeof(Cic));
+    obj->ratio = outRate - inRate;
+    return obj;
+}
+
+void cicDelete(Cic *obj)
+{
+    if (obj)
+        {
+        free(obj);
+        }
+}
+
+
+void cicUpdate(Cic *obj, float complex *data, int datalen, ComplexFunc func, void *ctx)
+{
+    float ratio = obj->ratio;
+    float acc = obj->acc;
+    while (datalen--)
+        {
+        int rvalu
+        
+        }
+        
+    obj->acc = acc;
+    obj->bufptr = bufPtr;
+}
+
+
+
+
+
+#endif
+
+//########################################################################
 //#  R E S A M P L E R
 //########################################################################
 

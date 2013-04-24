@@ -91,7 +91,7 @@ public slots:
 
     double getCenterFrequency()
         {
-        return sdrGetCenterFrequency(sdr) - freqOffset;
+        return sdrGetCenterFrequency(sdr) + freqOffset;
         }
     
     /**
@@ -136,7 +136,7 @@ public slots:
         status("af gain:%f", fgain);
         sdrSetAfGain(sdr, fgain);
         }
-
+        
     void adjustFreqOffset(double val)
         {
         freqOffset = val;
@@ -188,11 +188,35 @@ protected:
 
 private:
 
+    void formatFreq(char *out, long n)
+        {
+        char buf[20];
+    
+        snprintf(buf, 19, "%ld", n);
+        int c = 2 - strlen(buf) % 3;
+        for (char *p = buf; *p != 0; p++)
+            {
+            *out++ = *p;
+            if (c == 1)
+               *out++ = ',';
+            c = (c + 1) % 3;
+            }
+        *--out = 0;
+        }
+
     void showVfoFreq()
         {
-        char freqstr[32];
-        snprintf(freqstr, 31, "%ld", (long)(getCenterFrequency() + vfoFreq));
-        ui.vfoLabel->setText(freqstr);
+        char buf[32];
+        formatFreq(buf, (long)(getCenterFrequency() + vfoFreq));
+        ui.vfoDisplay->setText(buf);
+        }
+
+    void showCfFreq()
+        {
+        char buf[32];
+        strcpy(buf, "dev: ");
+        formatFreq(&(buf[5]), (long)(sdrGetCenterFrequency(sdr)));
+        ui.actualCfDisplay->setText(buf);
         }
 
 
