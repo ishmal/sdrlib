@@ -351,6 +351,7 @@ void ddcUpdate(Ddc *obj, float complex *data, int dataLen, ComplexOutputFunc *fu
                 {
                 func(buf, DDC_BUFSIZE, context);
                 bufPtr = 0;
+                obj->vfoPhase /= cabsf(obj->vfoPhase); //heal
                 }
             }
         head = head->next;
