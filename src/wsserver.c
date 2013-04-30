@@ -384,6 +384,7 @@ struct WsServer
     pthread_t thread;
     int cont;
     WsHandlerFunc *handlerFunc;
+    void *context;
 };
 
 
@@ -460,7 +461,7 @@ static int wsSendPacket(ClientInfo *info, int opcode, unsigned char *dat, long l
 
 int wsSend(ClientInfo *info, char *str)
 {
-    return wsSendPacket(info, 0x01, str, strlen(str));
+    return wsSendPacket(info, 0x01, (unsigned char *)str, strlen(str));
 }
 
 
@@ -551,7 +552,7 @@ static void defaultHandler(ClientInfo *info)
         if (ret < 0)
             break;
         trace("I just received: '%s'", buf);
-        if (strcmp(buf, "done") == 0)
+        if (strcmp((const char *)buf, "done") == 0)
             break;
         ret = wsSend(info, "return the favor");
         trace("send ret:%d", ret);
@@ -562,7 +563,7 @@ static void defaultHandler(ClientInfo *info)
 
 
 
-WsServer *wsCreate(WsHandlerFunc *func, int port)
+WsServer *wsCreate(WsHandlerFunc *func, void *context, int port)
 {
     WsServer *obj = (WsServer *)malloc(sizeof(WsServer));
     if (!obj)
@@ -570,6 +571,7 @@ WsServer *wsCreate(WsHandlerFunc *func, int port)
         return NULL;
         }
     obj->handlerFunc = (func) ? func : defaultHandler;
+    obj->context = context;
     obj->port = port;
     obj->sock = socket(AF_INET, SOCK_STREAM, 0);
     if (obj->sock < 0)
@@ -754,7 +756,7 @@ static void *handleClient(void *ctx)
                 {
                 char encbuf[128];
                 snprintf(encbuf, 128, "%s258EAFA5-E914-47DA-95CA-C5AB0DC85B11", value);
-                sha1hash64(encbuf, strlen(encbuf), keybuf);
+                sha1hash64((unsigned char *)encbuf, strlen(encbuf), keybuf);
                 wsrequest = TRUE;
                 } 
             }
@@ -810,8 +812,9 @@ static void *listenForClients(void *ctx)
             error("Could not create client info record");
             continue;
             }
-        info->server = obj;
-        info->socket = clisock;
+        info->server  = obj;
+        info->socket  = clisock;
+        info->context = obj->context;
         
         pthread_t thread;
         int rc = pthread_create(&thread, NULL, handleClient, (void *)info);
@@ -841,79 +844,6 @@ int wsServe(WsServer *obj)
 }
 
 
-
-//#define TEST 1
-
-#ifndef TEST
-
-int main(int argc, char **argv)
-{
-    WsServer *srvr = wsCreate(NULL, 4444);
-    if (srvr)
-        {
-        wsServe(srvr);
-        }
-}
-
-#else
-
-
-static void test1()
-{
-    unsigned char hash[20];
-    char *str = "abcdbcdecdefdefgefghfghighijhijkijkljklmklmnlmnomnopnopq";
-    //hash should be:  84983E44 1C3BD26E BAAE4AA1 F95129E5 E54670F1 
-    sha1hash((unsigned char *)str, strlen(str), hash);
-    int i;
-    for (i = 0 ; i < 20 ; i++)
-        printf("%02x", hash[i]);
-    printf("\n");
-}
-
-
-static void test2()
-{
-    char b64buf[256];
-    unsigned char plainbuf[256];
-    strcpy(plainbuf, "the quick brown fox jumped over the lazy dog");
-    base64encode(plainbuf, strlen(plainbuf), b64buf);
-    printf("%d : '%s'\n", (int)strlen(b64buf), b64buf);
-    base64decode(b64buf, plainbuf, 256);
-    printf("%d : '%s'\n", (int)strlen(plainbuf), plainbuf);
-}
-
-static void test3()
-{
-    char *key = "x3JJHMbDL1EzLkh9GBhXDw==";
-    char buf[256];
-    snprintf(buf, 256, "%s258EAFA5-E914-47DA-95CA-C5AB0DC85B11", key);
-    char result[32];
-    sha1hash64(buf, strlen(buf), result);
-    char *exp = "HSmrc0sMlYUkAGmm5OPpG2HaGWk=";
-    printf("result: '%s'   should be: '%s'\n", result, exp);
-    if (strcmp(result, exp)==0)
-        printf("success\n");
-    else
-        printf("failure\n");
-}
-
-
-
-static void doTests()
-{
-    test1();
-    test2();
-    test3();
-}
-
-
-int main(int argc, char **argv)
-{
-    doTests();
-}
-
-
-#endif
 
 
 

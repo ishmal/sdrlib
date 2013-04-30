@@ -35,6 +35,7 @@ struct ClientInfo
 {
     WsServer *server;
     int socket;
+    void *context;
     char resourceName[CLIENT_BUFLEN];
     char buf[CLIENT_BUFLEN];
 };
@@ -76,7 +77,7 @@ int wsRecv(ClientInfo *info, unsigned char *dat, int len);
 /**
  *
  */
-WsServer *wsCreate(WsHandlerFunc *func, int port);
+WsServer *wsCreate(WsHandlerFunc *func, void * context, int port);
 
 
 
