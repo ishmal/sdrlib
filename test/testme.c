@@ -102,6 +102,49 @@ int test_main()
 }
 
 
+#if 0
+
+static void test_ws1()
+{
+    unsigned char hash[20];
+    char *str = "abcdbcdecdefdefgefghfghighijhijkijkljklmklmnlmnomnopnopq";
+    //hash should be:  84983E44 1C3BD26E BAAE4AA1 F95129E5 E54670F1 
+    sha1hash((unsigned char *)str, strlen(str), hash);
+    int i;
+    for (i = 0 ; i < 20 ; i++)
+        printf("%02x", hash[i]);
+    printf("\n");
+}
+
+
+static void test_ws2()
+{
+    char b64buf[256];
+    unsigned char plainbuf[256];
+    strcpy(plainbuf, "the quick brown fox jumped over the lazy dog");
+    base64encode(plainbuf, strlen(plainbuf), b64buf);
+    printf("%d : '%s'\n", (int)strlen(b64buf), b64buf);
+    base64decode(b64buf, plainbuf, 256);
+    printf("%d : '%s'\n", (int)strlen(plainbuf), plainbuf);
+}
+
+static void test_ws3()
+{
+    char *key = "x3JJHMbDL1EzLkh9GBhXDw==";
+    char buf[256];
+    snprintf(buf, 256, "%s258EAFA5-E914-47DA-95CA-C5AB0DC85B11", key);
+    char result[32];
+    sha1hash64(buf, strlen(buf), result);
+    char *exp = "HSmrc0sMlYUkAGmm5OPpG2HaGWk=";
+    printf("result: '%s'   should be: '%s'\n", result, exp);
+    if (strcmp(result, exp)==0)
+        printf("success\n");
+    else
+        printf("failure\n");
+}
+
+#endif
+
 
 int dotests()
 {
