@@ -114,7 +114,7 @@ int parseAndExecute(SdrLib *sdr, char *buf)
                 }
             }
         }
-    else if (equ(cmd, "gain")||equ(cmd, "g"))
+    else if (equ(cmd, "gain") || equ(cmd, "g"))
         {
         if (!p0)
             {
@@ -132,6 +132,38 @@ int parseAndExecute(SdrLib *sdr, char *buf)
                     }
                 else
                     sdrSetRfGain(sdr, gain);
+                }
+            }
+        }
+    else if (equ(cmd, "vfo") || equ(cmd, "v"))
+        {
+        if (!p0)
+            {
+            float f = sdrGetVfoFreq(sdr);
+            trace("vfo: %f", f);
+            }
+        else
+            {
+            float f;
+            if (getFloat(p0, &f))
+                {
+                sdrSetVfoFreq(sdr, f);
+                }
+            }
+        }
+    else if (equ(cmd, "lo"))
+        {
+        if (!p0)
+            {
+            float f = sdrFetVfoFreq(sdr);
+            trace("vfo: %f", f);
+            }
+        else
+            {
+            float f;
+            if (getFloat(p0, &f))
+                {
+                sdrSetVfoFreq(sdr, f);
                 }
             }
         }

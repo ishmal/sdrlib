@@ -128,6 +128,9 @@ static void base64encode(unsigned char *inbuf, int len, char *outbuf)
 }
 
 
+// We dont need decode here.  But keep the code
+#if 0
+
 static int _dec64(int ch)
 {
     int v;
@@ -180,7 +183,7 @@ static int base64decode(char *inbuf, unsigned char *outbuf, int outbufLen)
     return outputLen;
 }
 
-
+#endif
 
 
 /*###################################################################################
@@ -356,27 +359,6 @@ static void sha1hash64(unsigned char *data, int len, char *b64buf)
 
 
 
-ClientInfo *infoCreate()
-{
-    ClientInfo *obj = (ClientInfo *)malloc(sizeof(ClientInfo));
-    if (!obj)
-        {
-        return NULL;
-        }
-    memset(obj, 0, sizeof(ClientInfo));
-    return obj;
-}
-
-void infoDelete(ClientInfo *obj)
-{
-    if (obj)
-        {
-        free(obj);
-        }
-}
-
-
-
 struct WsServer
 {
     int sock;
@@ -387,6 +369,10 @@ struct WsServer
     void *context;
 };
 
+
+/* #############################################################
+##   U T I L I T Y
+############################################################# */
 
 
 
@@ -410,6 +396,10 @@ static char *trim(char *str)
   return str;
 }
 
+
+/* #############################################################
+##   C L I E N T    F U N C T I O N S
+############################################################# */
 
 
 
@@ -489,14 +479,13 @@ static int getInt(int sock, int size)
 int wsRecv(ClientInfo *info, unsigned char *dat, int len)
 {
     int sock = info->socket;
-    unsigned char *buf = (unsigned char *)info->buf;
     unsigned char b;
     if (read(sock, &b, 1)<0)
         return -1;
     int fin    = b & 0x80;
-    int rsv1   = b & 0x40;
-    int rsv2   = b & 0x20;
-    int rsv3   = b & 0x10;
+    //int rsv1   = b & 0x40;
+    //int rsv2   = b & 0x20;
+    //int rsv3   = b & 0x10;
     int opcode = b & 0x0f;
     if (read(sock, &b, 1)<0)
         return -1;
@@ -514,7 +503,7 @@ int wsRecv(ClientInfo *info, unsigned char *dat, int len)
         }
     
 
-    trace("fin: %d opcode:%d hasMask:%d len:%ld mask:%d", fin, opcode, hasMask, paylen, mask);
+    //trace("fin: %d opcode:%d hasMask:%d len:%ld mask:%d", fin, opcode, hasMask, paylen, mask);
     
     if (paylen > len)
         {
@@ -542,71 +531,30 @@ int wsRecv(ClientInfo *info, unsigned char *dat, int len)
 
 
 
-static void defaultHandler(ClientInfo *info)
+
+/* #############################################################
+##   H A N D L E    C L I E N T
+############################################################# */
+
+
+ClientInfo *infoCreate()
 {
-    trace("resource : '%s'", info->resourceName);
-    unsigned char buf[1024];
-    while (1)
-        {
-        int ret = wsRecv(info, buf, 1025);
-        if (ret < 0)
-            break;
-        trace("I just received: '%s'", buf);
-        if (strcmp((const char *)buf, "done") == 0)
-            break;
-        ret = wsSend(info, "return the favor");
-        trace("send ret:%d", ret);
-        } 
-
-}
-
-
-
-
-WsServer *wsCreate(WsHandlerFunc *func, void *context, int port)
-{
-    WsServer *obj = (WsServer *)malloc(sizeof(WsServer));
+    ClientInfo *obj = (ClientInfo *)malloc(sizeof(ClientInfo));
     if (!obj)
         {
         return NULL;
         }
-    obj->handlerFunc = (func) ? func : defaultHandler;
-    obj->context = context;
-    obj->port = port;
-    obj->sock = socket(AF_INET, SOCK_STREAM, 0);
-    if (obj->sock < 0)
-        {
-        error("Could not create server socket");
-        return NULL;
-        }
-    struct sockaddr_in addr;
-    memset(&addr, 0, sizeof(struct sockaddr_in));
-    addr.sin_family = AF_INET;
-    addr.sin_addr.s_addr = INADDR_ANY;
-    addr.sin_port = htons(port);
-    int ret = bind(obj->sock, (struct sockaddr *) &addr, sizeof(addr));
-    if (ret < 0)
-        {
-        error("Could not bind to port %d : %s", port, strerror(errno));
-        close(obj->sock);
-        free(obj);
-        return NULL;
-        }
-    listen(obj->sock, 5);
+    memset(obj, 0, sizeof(ClientInfo));
     return obj;
 }
 
-
-void wsDelete(WsServer *obj)
+void infoDelete(ClientInfo *obj)
 {
     if (obj)
         {
-        close(obj->sock);
         free(obj);
         }
 }
-
-
 
 
 
@@ -773,7 +721,6 @@ static void *handleClient(void *ctx)
             }
         else
             {
-            WsServer *srv = info->server;
             serveFile(info);
             }
         }
@@ -788,6 +735,10 @@ static void *handleClient(void *ctx)
 }
 
 
+
+/* #############################################################
+##   S E R V E R    L O O P
+############################################################# */
 
 /**
  * This is the listening thread
@@ -843,6 +794,56 @@ int wsServe(WsServer *obj)
     return TRUE;
 }
 
+
+
+/* #############################################################
+##   C O N S T R U C T O R    /    D E S T R U C T O R
+############################################################# */
+
+
+
+WsServer *wsCreate(WsHandlerFunc *func, void *context, int port)
+{
+    WsServer *obj = (WsServer *)malloc(sizeof(WsServer));
+    if (!obj)
+        {
+        return NULL;
+        }
+    obj->handlerFunc = func;
+    obj->context = context;
+    obj->port = port;
+    obj->sock = socket(AF_INET, SOCK_STREAM, 0);
+    if (obj->sock < 0)
+        {
+        error("Could not create server socket");
+        return NULL;
+        }
+    struct sockaddr_in addr;
+    memset(&addr, 0, sizeof(struct sockaddr_in));
+    addr.sin_family = AF_INET;
+    addr.sin_addr.s_addr = INADDR_ANY;
+    addr.sin_port = htons(port);
+    int ret = bind(obj->sock, (struct sockaddr *) &addr, sizeof(addr));
+    if (ret < 0)
+        {
+        error("Could not bind to port %d : %s", port, strerror(errno));
+        close(obj->sock);
+        free(obj);
+        return NULL;
+        }
+    listen(obj->sock, 5);
+    return obj;
+}
+
+
+void wsDelete(WsServer *obj)
+{
+    if (obj)
+        {
+        close(obj->sock);
+        free(obj);
+        }
+}
 
 
 
