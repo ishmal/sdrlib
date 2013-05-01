@@ -228,15 +228,23 @@ void ddcDelete(Ddc *obj)
         }
 }
 
-void ddcSetFreqs(Ddc *obj, float vfoFreq, float pbLoOff, float pbHiOff)
+/**
+ * @param vfo the frequency to be translated to 0
+ * @param pbLo the offset from vfo for the low end of the passband (ex:  -5khz)
+ * @param pbHI the offset from vfo for the high end of the passband (ex:  +5khz)
+ */
+void ddcSetFreqs(Ddc *obj, float vfo, float pbLo, float pbHi)
 {
-    float hiAbs = fabs(pbHiOff);
-    float loAbs = fabs(pbLoOff);
+    obj->vfo  = vfo;
+    obj->pbLo = pbLo;
+    obj->pbHi = pbHi;
+    float hiAbs = fabs(pbHi);
+    float loAbs = fabs(pbLo);
     float maxOff = (hiAbs > loAbs) ? hiAbs : loAbs;
-    firBPCoeffs(obj->size, obj->coeffs, pbLoOff, pbHiOff, obj->inRate);
+    firBPCoeffs(obj->size, obj->coeffs, pbLo, pbHi, obj->inRate);
     obj->outRate = maxOff * 2.0;
     obj->ratio = obj->outRate/obj->inRate;
-    float omega = TWOPI * vfoFreq / obj->inRate;
+    float omega = TWOPI * vfo / obj->inRate;
     obj->vfoFreq = cos(omega) - sin(omega) * I;
 }
 

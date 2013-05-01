@@ -119,6 +119,9 @@ struct Ddc
     float ratio;
     float inRate;
     float outRate;
+    float vfo;  //cached
+    float pbLo; //cached
+    float pbHi; //cached
     float complex vfoPhase;
     float complex vfoFreq;
     float acc;

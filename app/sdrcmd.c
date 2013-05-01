@@ -88,7 +88,7 @@ int parseAndExecute(SdrLib *sdr, char *buf)
     
     if (equ(cmd, "exit")||equ(cmd, "quit")||equ(cmd, "q"))
         {
-        sdrStart(sdr);
+        return -1;
         }
     else if (equ(cmd, "start"))
         {
@@ -139,7 +139,7 @@ int parseAndExecute(SdrLib *sdr, char *buf)
         {
         if (!p0)
             {
-            float f = sdrGetVfoFreq(sdr);
+            float f = sdrGetVfo(sdr);
             trace("vfo: %f", f);
             }
         else
@@ -147,7 +147,7 @@ int parseAndExecute(SdrLib *sdr, char *buf)
             float f;
             if (getFloat(p0, &f))
                 {
-                sdrSetVfoFreq(sdr, f);
+                sdrSetVfo(sdr, f);
                 }
             }
         }
@@ -155,15 +155,31 @@ int parseAndExecute(SdrLib *sdr, char *buf)
         {
         if (!p0)
             {
-            float f = sdrFetVfoFreq(sdr);
-            trace("vfo: %f", f);
+            float f = sdrGetPbLo(sdr);
+            trace("pblo: %f", f);
             }
         else
             {
             float f;
             if (getFloat(p0, &f))
                 {
-                sdrSetVfoFreq(sdr, f);
+                sdrSetPbLo(sdr, f);
+                }
+            }
+        }
+    else if (equ(cmd, "hi"))
+        {
+        if (!p0)
+            {
+            float f = sdrGetPbHi(sdr);
+            trace("pbhi: %f", f);
+            }
+        else
+            {
+            float f;
+            if (getFloat(p0, &f))
+                {
+                sdrSetPbHi(sdr, f);
                 }
             }
         }
@@ -187,7 +203,7 @@ int cmdloop()
         printf("sdr > ");
         fgets(inbuf, BUFLEN, stdin);
         int ret = parseAndExecute(sdr, inbuf);
-        if (!ret)
+        if (ret < 0)
             break;
         }
     sdrDelete(sdr);

@@ -147,7 +147,31 @@ int sdrSetCenterFrequency(SdrLib *sdrlib, double freq);
 
 /**
  */   
-void sdrSetDdcFreqs(SdrLib *sdr, float vfoFreq, float pbLoOff, float pbHioff);
+void sdrSetDdcFreqs(SdrLib *sdr, float vfo, float pbLo, float pbHi);
+
+/**
+ */   
+void sdrSetVfo(SdrLib *sdr, float vfo);
+
+/**
+ */   
+float sdrGetVfo(SdrLib *sdr);
+
+/**
+ */   
+void sdrSetPbLo(SdrLib *sdr, float pbLo);
+
+/**
+ */   
+float sdrGetPbLo(SdrLib *sdr);
+
+/**
+ */   
+void sdrSetPbHi(SdrLib *sdr, float pbHi);
+
+/**
+ */   
+float sdrGetPbHi(SdrLib *sdr);
 
 /**
  * Get the current sample rate, in samples/sec

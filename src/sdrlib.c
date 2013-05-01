@@ -180,14 +180,63 @@ int sdrSetCenterFrequency(SdrLib *sdr, double freq)
 
 /**
  */   
-void sdrSetDdcFreqs(SdrLib *sdr, float vfoFreq, float pbLoOff, float pbHiOff)
+void sdrSetDdcFreqs(SdrLib *sdr, float vfo, float pbLo, float pbHi)
 {
-    ddcSetFreqs(sdr->ddc, vfoFreq, pbLoOff, pbHiOff);
-    float rate = ddcGetOutRate(sdr->ddc);
+    Ddc *ddc = sdr->ddc;
+    ddcSetFreqs(ddc, vfo, ddc->pbLo, ddc->pbHi);
+    float rate = ddcGetOutRate(ddc);
     trace("if rate: %f", rate);
     resamplerSetInRate(sdr->resampler, rate);
 }
 
+
+/**
+ */   
+void sdrSetVfo(SdrLib *sdr, float vfo)
+{
+    Ddc *ddc = sdr->ddc;
+    sdrSetDdcFreqs(sdr, vfo, ddc->pbLo, ddc->pbHi);
+}
+
+
+/**
+ */   
+float sdrGetVfo(SdrLib *sdr)
+{
+    return sdr->ddc->vfo;
+}
+
+/**
+ */   
+void sdrSetPbLo(SdrLib *sdr, float pbLo)
+{
+    Ddc *ddc = sdr->ddc;
+    sdrSetDdcFreqs(sdr, ddc->vfo, pbLo, ddc->pbHi);
+}
+
+
+/**
+ */   
+float sdrGetPbLo(SdrLib *sdr)
+{
+    return sdr->ddc->pbLo;
+}
+
+/**
+ */   
+void sdrSetPbHi(SdrLib *sdr, float pbHi)
+{
+    Ddc *ddc = sdr->ddc;
+    sdrSetDdcFreqs(sdr, ddc->vfo, ddc->pbLo, pbHi);
+}
+
+
+/**
+ */   
+float sdrGetPbHi(SdrLib *sdr)
+{
+    return sdr->ddc->pbHi;
+}
 
 /**
  */   
