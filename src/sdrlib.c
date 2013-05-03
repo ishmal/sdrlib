@@ -141,6 +141,7 @@ int sdrStart(SdrLib *sdr)
         }
     trace("started");
     sdr->thread = thread;
+    sdr->running = 1;
     return TRUE;
 }
 
@@ -149,7 +150,8 @@ int sdrStart(SdrLib *sdr)
  */   
 int sdrStop(SdrLib *sdr)
 {
-    sdr->running = 0;
+    if (!sdr->running)
+        return TRUE;
     void *status;
     pthread_join(sdr->thread, &status);
     Device *d = sdr->device;
@@ -158,6 +160,7 @@ int sdrStop(SdrLib *sdr)
         d->close(d->ctx);
         sdr->device = NULL;
         }
+    sdr->running = 0;
     return TRUE;
 }
 
