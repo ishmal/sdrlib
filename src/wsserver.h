@@ -77,7 +77,7 @@ int wsRecv(ClientInfo *info, unsigned char *dat, int len);
 /**
  *
  */
-WsServer *wsCreate(WsHandlerFunc *func, void * context, int port);
+WsServer *wsCreate(WsHandlerFunc *func, void * context, char *dir, int port);
 
 
 

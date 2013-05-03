@@ -362,6 +362,7 @@ static void sha1hash64(unsigned char *data, int len, char *b64buf)
 struct WsServer
 {
     int sock;
+    char dirName[80];
     int port;
     pthread_t thread;
     int cont;
@@ -619,10 +620,11 @@ static void outf(int fd, char *fmt, ...)
 static void serveFile(ClientInfo *info)
 {
     char *resName = info->resourceName;
+    char *dirName = info->server->dirName;
     char *buf = info->buf;
     int sock = info->socket;
     
-    snprintf(buf, 255, "./%s", info->resourceName);
+    snprintf(buf, 255, "%s/%s", dirName, resName);
     FILE *f = fopen(buf, "rb");
     if (!f)
         {
@@ -802,7 +804,7 @@ int wsServe(WsServer *obj)
 
 
 
-WsServer *wsCreate(WsHandlerFunc *func, void *context, int port)
+WsServer *wsCreate(WsHandlerFunc *func, void *context, char *dir, int port)
 {
     WsServer *obj = (WsServer *)malloc(sizeof(WsServer));
     if (!obj)
@@ -811,6 +813,7 @@ WsServer *wsCreate(WsHandlerFunc *func, void *context, int port)
         }
     obj->handlerFunc = func;
     obj->context = context;
+    strncpy(obj->dirName, dir, 80);
     obj->port = port;
     obj->sock = socket(AF_INET, SOCK_STREAM, 0);
     if (obj->sock < 0)

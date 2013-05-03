@@ -273,14 +273,14 @@ static void sdrServer(ClientInfo *info)
 
 
 
-static int doRun(int port)
+static int doRun(char *dir, int port)
 {
     SdrServer *ctx = svrCreate();
     if (!ctx)
         {
         return FALSE;
         }
-    WsServer *svr = wsCreate(sdrServer, (void *)ctx, port);
+    WsServer *svr = wsCreate(sdrServer, (void *)ctx, dir, port);
     wsServe(svr);
     svrDelete(ctx);
     return TRUE;
@@ -305,12 +305,16 @@ static void usage(char *progname)
 
 int main(int argc, char **argv)
 {
+    char *dir = ".";
     int port = 8888;
     int c;
     while ((c = getopt (argc, argv, "p:")) != -1)
         {
         switch (c)
             {
+            case 'd':
+                dir = optarg;;
+                break;
             case 'p':
                 port = atoi(optarg);
                 break;
@@ -319,7 +323,7 @@ int main(int argc, char **argv)
                 return -1;
             }
         }
-    if (doRun(port))
+    if (doRun(dir, port))
         return 0;
     else
         return -1;

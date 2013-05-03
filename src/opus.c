@@ -37,10 +37,11 @@ typedef struct Opus Opus;
 
 
 #define MAX_PACKET (1024 * 16)
+#define FRAME_SIZE (2880)
 struct Opus
 {
     OpusEncoder *enc;
-    float enc_inbuf[2880 * 2];
+    float enc_inbuf[FRAME_SIZE];
     int enc_inbuf_ptr;
     unsigned char enc_outbuf[MAX_PACKET];
 };
@@ -87,10 +88,10 @@ int opusEncode(Opus *obj, float *data, int datalen)
     while (datalen--)
         {
         inbuf[inptr++] = *data++;
-        if (inptr >= 2880)
+        if (inptr >= FRAME_SIZE)
             {
             inptr = 0;
-            int len = opus_encode_float(obj->enc, inbuf, 2880, obj->enc_outbuf, MAX_PACKET);
+            int len = opus_encode_float(obj->enc, inbuf, FRAME_SIZE, obj->enc_outbuf, MAX_PACKET);
             //do something with the outbuf
             }
         }
