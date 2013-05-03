@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html>
+<head>
+
+
+<script src="http://code.jquery.com/jquery-1.9.1.min.js"></script>
+
+<script>
+
+
+
+
+
+function SdrClient(anchorName)
+{
+    
+    function trace(msg) {
+        if (typeof(console !== "undefined")
+            console.log("Sdr: " + msg);
+    }
+
+    function error(msg) {
+        if (typeof(console !== "undefined")
+            console.log("Sdr: " + msg);
+    }
+
+    var anchor = $(anchorName);
+    var sdrBox = $("<div>");
+    anchor.append(sdrBox);
+
+    var startBtn = $("<button>").html("Start");
+    var exportBtn = $("<button>").html("Export");
+    sdrBox.append(startBtn, exportBtn);
+
+
+    var context = new webkitAudioContext();
+    var source = context.createBufferSource();
+
+    
+     
+
+    function play(data) {
+        context.decodeAudioData(data, function(buffer) {
+            source.buffer = buffer;
+    	    source.connect(context.destination);
+        	source.noteOn(0); 
+        });
+    }
+
+
+    function onOpen(evt) {
+        trace("open:" + evt.reason);
+    }
+
+    function onClose(evt) {
+        trace("close: " + evt.reason);
+    }
+    
+    function onMessage(evt) {
+        trace("rcv:" + evt.data);
+        var currTime = time();
+    }
+
+    function onError(evt) {
+        trace("onerror:" + evt.reason);
+    }
+
+
+    var sock = new WebSocket(uri);
+    sock.binaryType = "arraybuffer";
+    sock.onopen     = onOpen;
+    sock.onclose    = onClose;
+    sock.onmessage  = onMessage;
+    sock.onerror    = onError;
+
+
+
+
+}
+
+
+
+
+
+
+
+
+$(document).ready(function() {
+    new SdrClient("#sdr");    
+
+});
+
+
+</script>
+
+
+
+</head>
+<body>
+
+
+
+<div id="sdr"></div>
+
+
+
+
+
+</body>
+</html>
+
