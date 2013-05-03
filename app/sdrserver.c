@@ -262,9 +262,12 @@ static void sdrServer(ClientInfo *info)
         if (ret < 0)
             {
             }
-        ret = parseAndExecute(sdr, (char *)buf);
-        if (ret < 0)
-            break;
+        else
+            {
+            ret = parseAndExecute(sdr, (char *)buf);
+            if (ret < 0)
+                break;
+            }
         
         }
 }
@@ -281,9 +284,14 @@ static int doRun(char *dir, int port)
         return FALSE;
         }
     WsServer *svr = wsCreate(sdrServer, (void *)ctx, dir, port);
-    wsServe(svr);
+    int ret = TRUE;
+    if (svr)
+        {
+        wsServe(svr);
+        ret = FALSE;
+        }
     svrDelete(ctx);
-    return TRUE;
+    return ret;
 }
 
 
@@ -297,7 +305,8 @@ static void usage(char *progname)
     char * msg = 
         "Usage: %s { options }\n"
         "    where options are:\n"
-        "-p <portnumber>\n";
+        "-d <root_directory>\n"
+        "-p <port_number>\n";
 
     fprintf(stderr, msg, progname);
 }
@@ -308,7 +317,7 @@ int main(int argc, char **argv)
     char *dir = ".";
     int port = 8888;
     int c;
-    while ((c = getopt (argc, argv, "p:")) != -1)
+    while ((c = getopt (argc, argv, "d:p:")) != -1)
         {
         switch (c)
             {

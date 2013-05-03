@@ -8,27 +8,62 @@
 <script>
 
 
+function Waterfall(par, anchor, width, height)
+{
+    function trace(msg) {
+        if (typeof(console) !== "undefined")
+            console.log("Sdr: " + msg);
+    }
 
+    function error(msg) {
+        if (typeof(console) !== "undefined")
+            console.log("Sdr: " + msg);
+    }
+
+    var self = this;
+
+    var canvas = $("<canvas>").width(width).height(height);
+    anchor.append(canvas);
+    var ctx = canvas.get(0).getContext("2d");
+    
+    
+    function update(data) {
+        
+    }    
+    this.update = update();
+}
 
 
 function SdrClient(anchorName)
 {
     
     function trace(msg) {
-        if (typeof(console !== "undefined")
+        if (typeof(console) !== "undefined")
             console.log("Sdr: " + msg);
     }
 
     function error(msg) {
-        if (typeof(console !== "undefined")
+        if (typeof(console) !== "undefined")
             console.log("Sdr: " + msg);
     }
+
+    var self = this;
+
 
     var anchor = $(anchorName);
     var sdrBox = $("<div>");
     anchor.append(sdrBox);
+    
+    var wfAnchor = $("<div>");
+    sdrBox.append(wfAnchor);
+    
+    var wf = new Waterfall(this, wfAnchor, 600, 200);
 
     var startBtn = $("<button>").html("Start");
+    startBtn.click(function() {
+        send("start");
+    });
+    
     var exportBtn = $("<button>").html("Export");
     sdrBox.append(startBtn, exportBtn);
 
@@ -66,6 +101,7 @@ function SdrClient(anchorName)
     }
 
 
+    var uri = "ws://localhost:8080/sdr";
     var sock = new WebSocket(uri);
     sock.binaryType = "arraybuffer";
     sock.onopen     = onOpen;
@@ -74,7 +110,9 @@ function SdrClient(anchorName)
     sock.onerror    = onError;
 
 
-
+    function send(dat) {
+        sock.send(dat);
+    }
 
 }
 
