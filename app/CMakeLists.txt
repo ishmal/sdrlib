@@ -4,7 +4,7 @@ set(CMAKE_INCLUDE_CURRENT_DIR ON)
 
 add_executable(sdrserver sdrserver.c)
 if(WIN32)
-target_link_libraries(sdrserver sdrlib fftw3-3 PortAudio winmm pthread)
+target_link_libraries(sdrserver sdrlib fftw3-3 PortAudio winmm pthread wsock32)
 else()
 target_link_libraries(sdrserver sdrlib fftw3 PortAudio)
 endif()

@@ -28,6 +28,7 @@
 #include <stdarg.h>
 #include <pthread.h>
 #include <unistd.h>
+#include <inttypes.h>
 #include <ctype.h>
 #include <errno.h>
 #include <sys/stat.h>
@@ -35,9 +36,11 @@
 
 #ifdef WIN32
 #include <winsock.h>
+typedef int Socklen;
 #else
 #include <sys/socket.h>
 #include <netinet/in.h>
+typedef socklen_t Socklen;
 #endif
 
 
@@ -312,7 +315,7 @@ static void sha1hash(unsigned char *data, int len, unsigned char *outbuf)
             pad -= 8;
             while (pad--)
                 *b++ = 0;
-            long nrBits = 8L * len;
+            uint64_t nrBits = 8L * len;
             *b++ = (unsigned char) ((nrBits>>56) & 0xff);
             *b++ = (unsigned char) ((nrBits>>48) & 0xff);
             *b++ = (unsigned char) ((nrBits>>40) & 0xff);
@@ -423,15 +426,16 @@ static int wsSendPacket(ClientInfo *info, int opcode, unsigned char *dat, long l
         }
     else
         {
+        uint64_t llen = len;
         *b++ = 127;
-        *b++ = (unsigned char) ((len>>56) & 0xff);
-        *b++ = (unsigned char) ((len>>48) & 0xff);
-        *b++ = (unsigned char) ((len>>40) & 0xff);
-        *b++ = (unsigned char) ((len>>32) & 0xff);
-        *b++ = (unsigned char) ((len>>24) & 0xff);
-        *b++ = (unsigned char) ((len>>16) & 0xff);
-        *b++ = (unsigned char) ((len>> 8) & 0xff);
-        *b++ = (unsigned char) ((len    ) & 0xff);
+        *b++ = (unsigned char) ((llen>>56) & 0xff);
+        *b++ = (unsigned char) ((llen>>48) & 0xff);
+        *b++ = (unsigned char) ((llen>>40) & 0xff);
+        *b++ = (unsigned char) ((llen>>32) & 0xff);
+        *b++ = (unsigned char) ((llen>>24) & 0xff);
+        *b++ = (unsigned char) ((llen>>16) & 0xff);
+        *b++ = (unsigned char) ((llen>> 8) & 0xff);
+        *b++ = (unsigned char) ((llen    ) & 0xff);
         }
     int size = b-buf;
     
@@ -752,7 +756,7 @@ static void *listenForClients(void *ctx)
     while (obj->cont)
         {
         struct sockaddr_in addr;
-        socklen_t addrlen = sizeof(addr);
+        Socklen addrlen = sizeof(addr);
         int clisock = accept(obj->sock, (struct sockaddr *) &addr, &addrlen); 
         if (clisock < 0)
             {
