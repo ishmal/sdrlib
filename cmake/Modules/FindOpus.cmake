@@ -1,10 +1,10 @@
 if(NOT OPUS_FOUND)
   pkg_check_modules (OPUS_PKG opus)
-  find_path(OPUS_INCLUDE_DIR NAMES opus/opus.h
+  find_path(OPUS_INCLUDE_DIR NAMES opus.h
     PATHS
     ${OPUS_PKG_INCLUDE_DIRS}
-    /usr/include
-    /usr/local/include
+    /usr/include/opus
+    /usr/local/include/opus
   )
 
   find_library(OPUS_LIBRARIES NAMES opus

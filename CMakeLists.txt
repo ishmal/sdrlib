@@ -42,6 +42,9 @@ find_package(Threads)
 if(NOT FFTW3_FOUND)
     message(FATAL_ERROR "fftw required to compile SdrLib")
 endif(NOT FFTW3_FOUND)
+if(NOT OPUS_FOUND)
+    message(FATAL_ERROR "opus required to compile SdrLib")
+endif(NOT OPUS_FOUND)
 if(NOT LIBRTLSDR_FOUND)
     message(FATAL_ERROR "librtlsdr required to compile SdrLib")
 endif(NOT LIBRTLSDR_FOUND)
@@ -56,6 +59,7 @@ endif(WIN32)
 include_directories(
     ${CMAKE_SOURCE_DIR}/include
     ${CMAKE_SOURCE_DIR}/src
+    ${OPUS_INCLUDE_DIR}
     ${LIBRTLSDR_INCLUDE_DIR}
     ${THREADS_PTHREADS_INCLUDE_DIR}
 )
