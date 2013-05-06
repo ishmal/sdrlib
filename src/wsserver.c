@@ -444,11 +444,16 @@ static int wsSendPacket(ClientInfo *info, int opcode, unsigned char *dat, long l
         error("Write: could not write header to socket");
         return -1;
         }
-    long count = write(sock, dat, len);
-    if (count < len)
+    long count = 0;
+    while (count < len)
         {
-        error("Write: could not write %ld bytes to socket", len);
-        return -1;
+        int nrbytes = write(sock, dat+count, len-count);
+        if (nrbytes < 0)
+            {
+            error("Write: could not write %ld bytes to socket", len);
+            return -1;
+            }
+        count += nrbytes;
         }
     return count;
 }
