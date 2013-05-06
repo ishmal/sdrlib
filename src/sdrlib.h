@@ -36,16 +36,18 @@
 extern "C" {
 #else
 #include <complex.h>
-typedef void FloatOutputFunc(float *data, int size, void *ctx);
 typedef void ComplexOutputFunc(float complex *data, int size, void *ctx);
 #endif
+
+typedef void UbyteOutputFunc(unsigned char *data, int size, void *ctx);
+typedef void UintOutputFunc(unsigned int *ps, int size, void *ctx);
+typedef void FloatOutputFunc(float *data, int size, void *ctx);
 
 
 
 #define SDR_MAX_DEVICES 30
 
 
-typedef void PowerSpectrumFunc(unsigned int *ps, int size, void *ctx);
 
 /**
  * Forward declarations, hidden from clients
@@ -83,7 +85,7 @@ typedef struct
     pthread_t thread;
     int running; //state of the reader thread
     Fft *fft;
-    PowerSpectrumFunc *psFunc;
+    UintOutputFunc *psFunc; //for outputting the power spectrum
     void *psFuncCtx; 
     //Vfo *vfo;
     //Fir *bpf;
@@ -233,7 +235,7 @@ int sdrSetMode(SdrLib *sdrlib, Mode mode);
 
 
 
-void sdrSetPowerSpectrumFunc(SdrLib *sdrlib, PowerSpectrumFunc *func, void *ctx);
+void sdrSetPowerSpectrumFunc(SdrLib *sdrlib, UintOutputFunc *func, void *ctx);
 
 
 #ifdef __cplusplus

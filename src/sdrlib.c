@@ -345,7 +345,7 @@ int sdrSetMode(SdrLib *sdr, Mode mode)
 
 /**
  */   
-void sdrSetPowerSpectrumFunc(SdrLib *sdr, PowerSpectrumFunc *func, void *ctx)
+void sdrSetPowerSpectrumFunc(SdrLib *sdr, UintOutputFunc *func, void *ctx)
 {
     sdr->psFunc = (func) ? func : defaultPowerSpectrumCallback;
     sdr->psFuncCtx = ctx;
@@ -366,7 +366,7 @@ void sdrSetPowerSpectrumFunc(SdrLib *sdr, PowerSpectrumFunc *func, void *ctx)
 static void fftOutput(unsigned int *vals, int size, void *ctx)
 {
     SdrLib *sdr = (SdrLib *)ctx;
-    PowerSpectrumFunc *psFunc = sdr->psFunc;
+    UintOutputFunc *psFunc = sdr->psFunc;
     (*psFunc)(vals, size, sdr->psFuncCtx);
 }
 
