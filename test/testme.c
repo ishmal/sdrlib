@@ -76,7 +76,7 @@ int test_device()
 
 int test_main()
 {
-    SdrLib *sdr = sdrCreate();    
+    SdrLib *sdr = sdrCreate(NULL, NULL);    
     if (!sdr)
         {
         error("Failure initializing sdrlib");

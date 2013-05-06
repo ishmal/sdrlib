@@ -50,18 +50,17 @@
 
 static void powerSpectrumCallback(unsigned int *ps, int size, void *ctx)
 {
-    Waterfall *wf = (Waterfall *)ctx;
-    wf->updatePs(ps, size);
+    Sdr *sdr = (Sdr *) ctx;
+    sdr->updatePowerSpectrum(ps, size);
 }
 
 
 Sdr::Sdr()
 {
-    sdr = sdrCreate();
+    sdr = sdrCreate((void *)this, powerSpectrumCallback);
     freqOffset = 0;
     ui.setupUi(this);
     waterfall = new Waterfall(*this);
-    sdrSetPowerSpectrumFunc(sdr, powerSpectrumCallback, (void *)waterfall);
     ui.waterfallBox->addWidget(waterfall);
     connect(waterfall, SIGNAL(frequenciesChanged(float,float,float)), this, SLOT(setDdcFreqs(float,float,float)));
     freqDial = new FreqDial(*this);
@@ -110,6 +109,10 @@ void Sdr::adjustPsZoom(int zoom)
     status("ps zoom:%d", zoom);
 }
 
+void Sdr::updatePowerSpectrum(unsigned int *ps, int size)
+{
+    waterfall->updatePs(ps, size);
+}
 
 
 

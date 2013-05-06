@@ -50,7 +50,7 @@ static void defaultPowerSpectrumCallback(unsigned int *ps, int size, void *ctx)
 
 /**
  */  
-SdrLib *sdrCreate()
+SdrLib *sdrCreate(void *context, UintOutputFunc *psCallback)
 {
     SdrLib * sdr = (SdrLib *) malloc(sizeof(SdrLib));
     memset(sdr, 0, sizeof(SdrLib));
@@ -60,9 +60,9 @@ SdrLib *sdrCreate()
         error("No devices found");
         //but dont fail. wait until start()
         }
+    sdr->context   = context;
     sdr->fft       = fftCreate(16384);
-    sdr->psFunc    = defaultPowerSpectrumCallback;
-    sdr->psFuncCtx = sdr;
+    sdr->psFunc    = (psCallback) ? psCallback : defaultPowerSpectrumCallback;
     sdr->ddc       = ddcCreate(21, 0.0, -5000.0, 5000.0, 2048000.0);
     sdr->demodNull = demodNullCreate();
     sdr->demodFm   = demodFmCreate();
@@ -343,17 +343,6 @@ int sdrSetMode(SdrLib *sdr, Mode mode)
 
 
 
-/**
- */   
-void sdrSetPowerSpectrumFunc(SdrLib *sdr, UintOutputFunc *func, void *ctx)
-{
-    sdr->psFunc = (func) ? func : defaultPowerSpectrumCallback;
-    sdr->psFuncCtx = ctx;
-}
-
-
-
-
 
 /*############################################################################
 ## R E A D E R    T H R E A D
@@ -367,7 +356,7 @@ static void fftOutput(unsigned int *vals, int size, void *ctx)
 {
     SdrLib *sdr = (SdrLib *)ctx;
     UintOutputFunc *psFunc = sdr->psFunc;
-    (*psFunc)(vals, size, sdr->psFuncCtx);
+    (*psFunc)(vals, size, sdr->context);
 }
 
 

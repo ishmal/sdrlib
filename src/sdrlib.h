@@ -85,8 +85,8 @@ typedef struct
     pthread_t thread;
     int running; //state of the reader thread
     Fft *fft;
+    void *context; //context for any client code calling me
     UintOutputFunc *psFunc; //for outputting the power spectrum
-    void *psFuncCtx; 
     //Vfo *vfo;
     //Fir *bpf;
     Ddc *ddc;
@@ -107,7 +107,7 @@ typedef struct
  * Create a new SdrLib instance.
  * @return a new SdrLib instance
  */  
-SdrLib *sdrCreate();
+SdrLib *sdrCreate(void *context, UintOutputFunc *psCallback);
 
 
 /**

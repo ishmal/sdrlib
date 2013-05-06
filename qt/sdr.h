@@ -80,6 +80,8 @@ public:
         return sdrSetSampleRate(sdr, rate);
         }
         
+    void updatePowerSpectrum(unsigned int *ps, int size);
+        
     void adjust();
 
 

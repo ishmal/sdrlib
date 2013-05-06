@@ -69,7 +69,7 @@ SdrServer *svrCreate()
         {
         return NULL;
         }
-    svr->sdr = sdrCreate();
+    svr->sdr = sdrCreate(NULL, NULL);  //TODO: important to supply these values
     if (!svr->sdr)
         {
         free(svr);
