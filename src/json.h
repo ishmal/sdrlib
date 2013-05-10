@@ -83,9 +83,10 @@ JsonVal *jsonCreate(int type);
 void jsonDelete(JsonVal *val);
 
 /**
- * Output a JSON string with all of the proper escapes
+ * Stringify a JsonVal.
+ * Return the length if all went well, else -1
  */       
-static int jsonToStr(char *dest, int destlen, char *src);
+int jsonToStr(JsonVal *js, char *buf, int len);
 
 
 

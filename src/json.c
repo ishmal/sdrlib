@@ -103,44 +103,170 @@ void jsonDelete(JsonVal *val)
 
 
 
-/**
- * Output a JSON string with all of the proper escapes
- */       
-static int formatJsonStr(char *dest, int destlen, char *src)
+
+
+
+static int out(char *buf, int len, int pos, char *str)
 {
-    if (destlen < 2)
+    char *b = buf + pos;
+    while (*str)
         {
-        return -1;
-        }
-    char *out = dest;
-    char *end = dest + destlen - 2;
-    
-    *out++ = '"';
-    while (*src)
-        {
-        char ch = *src++;
-        if (ch == '\\')       { *out++ = '\\'; *out++ = '\\'; }
-        else if (ch == '"')   { *out++ = '\\'; *out++ = '"';  }
-        else if (ch == '\f')  { *out++ = '\\'; *out++ = 'f';  }
-        else if (ch == '\b')  { *out++ = '\\'; *out++ = 'b';  }
-        else if (ch == '\t')  { *out++ = '\\'; *out++ = 't';  }
-        else if (ch == '\r')  { *out++ = '\\'; *out++ = 'r';  }
-        else if (ch == '\n')  { *out++ = '\\'; *out++ = 'n';  }
-        else if (ch >= 32 && ch < 127) *out++ = ch;
-        else 
-            { snprintf(out, 6, "\\u%04x", (uint32_t) ch); out += 6; }
-                
-        if (out >= end)
+        if (pos >= len)
+            {
+            error("out: output buffer overflowed");
             return -1;
+            }
+        *b++ = *str++;
+        pos++;
         }
-        
-    *out++ = '"';
-    return out-dest;
+    return pos;
 }
 
 
+/**
+ * Output a JSON string with all of the proper escapes
+ */       
+static int outStr(char *buf, int len, int pos0, char *src)
+{
+    
+    char cbuf[2];
+    cbuf[1] = '\0';
+    int pos = out(buf, len, pos0, "\"");
+    if (pos < 0)
+        return -1;
+    while (*src)
+        {
+        char ch = *src++;
+        if (ch == '\\')       pos = out(buf, len, pos, "\\\\");
+        else if (ch == '"')   pos = out(buf, len, pos, "\"");
+        else if (ch == '\f')  pos = out(buf, len, pos, "\\f");
+        else if (ch == '\b')  pos = out(buf, len, pos, "\\b");
+        else if (ch == '\t')  pos = out(buf, len, pos, "\\t");
+        else if (ch == '\r')  pos = out(buf, len, pos, "\\r");
+        else if (ch == '\n')  pos = out(buf, len, pos, "\\n");
+        else if (ch >= 32 && ch < 127)
+            {
+            cbuf[0] = ch;
+            pos = out(buf, len, pos, cbuf);
+            }
+        else 
+            { 
+            char hbuf[7];
+            snprintf(hbuf, 6, "\\u%04x", (uint32_t) ch);
+            pos = out(buf, len, pos, hbuf);
+            }
+                
+        if (pos < 0)
+            return -1;
+        }
+        
+    pos = out(buf, len, pos, "\"");
+    return pos;
+}
 
 
+static int jsonToStringRecursive(JsonVal *js, char *buf, int len, int pos)
+{
+    switch (js->type)
+        {
+        case JsonNil :
+            {
+            return out(buf, len, pos, "null");
+            }
+        case JsonBool :
+            {
+            char *str = (js->value.b) ? "true" : "false";
+            return out(buf, len, pos, str);
+            }
+        case JsonInt :
+            {
+            char fbuf[20];
+            snprintf(fbuf, 19, "%d", js->value.i);
+            return out(buf, len, pos, fbuf);
+            }
+        case JsonFloat :
+            {
+            char fbuf[20];
+            snprintf(fbuf, 19, "%f", js->value.f);
+            return out(buf, len, pos, fbuf);
+            }
+        case JsonStr :
+            {
+            return outStr(buf, len, pos, js->value.s);
+            }
+        case JsonArr :
+            {
+            pos = out(buf, len, pos, "[");
+            if (pos < 0)
+                return -1;
+            JsonNode *n = js->value.a;
+            while (n)
+                {
+                pos = jsonToStringRecursive(n->value, buf, len, pos);
+                if (pos < 0)
+                    return -1;
+                if (n->next)
+                    {
+                    pos = out(buf, len, pos, ",");
+                    if (pos < 0)
+                        return -1;
+                    }
+                n = n->next;
+                }
+            return out(buf, len, pos, "]");
+            }
+        case JsonObj :
+            {
+            pos = out(buf, len, pos, "{");
+            if (pos < 0)
+                return -1;
+            int i=0;
+            for ( ; i < 256 ; i++)
+                {
+                JsonProp *p = js->value.h[i];
+                while (p)
+                    {
+                    pos = outStr(buf, len, pos, p->name);
+                    if (pos < 0)
+                        return -1;
+                    pos = out(buf, len, pos, ":");
+                    if (pos < 0)
+                        return -1;
+                    pos = jsonToStringRecursive(p->value, buf, len, pos);
+                    if (pos < 0)
+                        return -1;
+                    if (p->next)
+                        {
+                        pos = out(buf, len, pos, ",");
+                        if (pos < 0)
+                            return -1;
+                        }
+                    p = p->next;
+                    }
+                }
+            return out(buf, len, pos, "}");
+            break;
+            }
+        default :
+            {
+            error("jsonToString: unknown type %d", js->type);
+            return -1;
+            }
+        }
+}
+
+
+/**
+ * Exported
+ */
+int jsonToStr(JsonVal *js, char *buf, int len)
+{
+    int ret = jsonToStringRecursive(js, buf, len-1, 0);
+    if (ret < 0)
+        return -1;
+    buf[ret] = '\0';
+    return ret;
+}
 
 
 
@@ -266,12 +392,14 @@ JsonVal *jsonObj()
 {
     JsonVal *v = jsonCreate(JsonObj);
     if (!v) return NULL;
-    JsonProp **props = (JsonProp **)malloc(256 * sizeof(JsonProp *));
+    int allocSize = sizeof(JsonProp *) << 8; // * 256
+    JsonProp **props = (JsonProp **)malloc(allocSize);
     if (!props)
         {
         free(v);
         return NULL;
         }
+    memset(props, 0, allocSize);
     v->value.h = props;
     return v;
 }
@@ -459,6 +587,7 @@ static int getString(JsonParser *p)
             }
         else if (ch == quoteChar)
             {
+            *s = '\0';
             break;
             }
         else
@@ -490,6 +619,7 @@ static JsonVal *getObject(JsonParser *p)
         char *name = strdup(p->strbuf);
         if (!name)
             {
+            jerror(p, "could not allocate string");
             }
         if (!skipwhite( p ))
             {
@@ -516,12 +646,15 @@ static JsonVal *getObject(JsonParser *p)
             }
         if (!jsonObjPut(js, name, v))
             {
+            jerror(p, "Could not add property '%s' to object", name);
+            free(name);
+            jsonDelete(js);
+            return NULL;
             }
         free(name);
         if (!skipwhite( p ))
             {
             jerror(p, "Unterminated object looking for '%c' or '%c'", ',', '}');
-            free(name);
             jsonDelete(js);
             return NULL;
             }
@@ -551,7 +684,7 @@ static JsonVal *getArray(JsonParser *p)
         {
         if (!skipwhite( p ))
             {
-            jerror(p, "Unterminated array, looking for property name");
+            jerror(p, "Unterminated array, looking for value");
             jsonDelete(js);
             return NULL;
             }
@@ -564,6 +697,9 @@ static JsonVal *getArray(JsonParser *p)
             }
         if (!jsonArrAdd(js, v))
             {
+            jerror(p, "Adding value to array");
+            jsonDelete(js);
+            return NULL;
             }
         if (!skipwhite( p ))
             {
@@ -581,7 +717,7 @@ static JsonVal *getArray(JsonParser *p)
             }
         else
             {
-            jerror(p, "Array expected '%c' or '%c'", ':', ']');
+            jerror(p, "Array expected '%c' or '%c'", ',', ']');
             jsonDelete(js);
             return NULL;
             }
@@ -610,7 +746,7 @@ static JsonVal *parse(JsonParser *p)
         JsonVal *js = getArray( p );
         return js;
         }
-    else if (ch == '"')
+    else if (ch == '"' || ch == '\'')
         {
         p->pos--; //back up to the quote again
         if (!getString( p ))
@@ -637,19 +773,28 @@ static JsonVal *parse(JsonParser *p)
     else
         {
         //try for a float, then int
-        char *startptr = p->buf + p->pos;
+        p->pos++; //back up to char
+        char *startptr = p->buf + p->pos; 
         char *endptr;
         float fval = strtof(startptr, &endptr);
         int flen = endptr - startptr;
         int ival = strtol(startptr, &endptr, 10);
         int ilen = endptr - startptr;
+        trace("%f %d %d %d", fval, flen, ival, ilen);
+        //if flen & ilen same length, then it was an integer
         if (flen > 0 && flen > ilen)
+            {
+            p->pos += flen;
             return jsonFloat(fval);
+            }
         else if (ilen>0)
+            {
+            p->pos += ilen;
             return jsonInt(ival);
+            }
         else
             {
-            jerror(p, "Unknown token");
+            jerror(p, "Unknown token: '%c'", ch);
             return NULL;
             }
         }

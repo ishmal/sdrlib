@@ -32,6 +32,7 @@
 
 #include "audio.h"
 #include "device.h"
+#include "json.h"
 #include "private.h"
 
 int test_audio()
@@ -102,6 +103,36 @@ int test_main()
 }
 
 
+
+int test_json()
+{
+    char *jsonstr = 
+    "{"
+    "'data' : ["
+    "1, 2.7, 3, 4, '5'"
+    "]"
+    "}";
+    
+    printf("in str: '%s'\n", jsonstr);
+
+    JsonVal *js = jsonParse(jsonstr, strlen(jsonstr));
+    
+    char buf[256];
+    
+    
+    if (jsonToStr(js, buf, 255)<0)
+        error("Formatting json failed");
+    else
+        {
+        printf("Success: %s\n", buf);
+        }
+    
+    jsonDelete(js);
+    
+    return TRUE;
+}
+
+
 #if 0
 
 static void test_ws1()
@@ -148,7 +179,7 @@ static void test_ws3()
 
 int dotests()
 {
-    test_main();
+    test_json();
     return TRUE;
 }
 
