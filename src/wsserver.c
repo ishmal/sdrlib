@@ -360,8 +360,6 @@ static void sha1hash64(unsigned char *data, int len, char *b64buf)
 ###################################################################################*/
 
 
-
-
 struct WsServer
 {
     int sock;
@@ -369,7 +367,10 @@ struct WsServer
     int port;
     pthread_t thread;
     int cont;
-    WsHandlerFunc *handlerFunc;
+    void (*onOpen)(WsHandler *ws, char *msg);
+    void (*onClose)(WsHandler *ws, char *msg);
+    void (*onMessage)(WsHandler *ws, unsigned char *data, int len);
+    void (*onError)(WsHandler *ws, char *msg);
     void *context;
 };
 
@@ -407,9 +408,9 @@ static char *trim(char *str)
 
 
 
-static int wsSendPacket(ClientInfo *info, int opcode, unsigned char *dat, long len)
+static int wsSendPacket(WsHandler *ws, int opcode, unsigned char *dat, long len)
 {
-    int sock = info->socket;
+    int sock = ws->socket;
     
     unsigned char buf[14];
     
@@ -459,15 +460,15 @@ static int wsSendPacket(ClientInfo *info, int opcode, unsigned char *dat, long l
 }
 
 
-int wsSend(ClientInfo *info, char *str)
+int wsSend(WsHandler *ws, char *str)
 {
-    return wsSendPacket(info, 0x01, (unsigned char *)str, strlen(str));
+    return wsSendPacket(ws, 0x01, (unsigned char *)str, strlen(str));
 }
 
 
-int wsSendBinary(ClientInfo *info, unsigned char *dat, long len)
+int wsSendBinary(WsHandler *ws, unsigned char *dat, long len)
 {
-    return wsSendPacket(info, 0x02, dat, len);
+    return wsSendPacket(ws, 0x02, dat, len);
 }
 
 
@@ -486,79 +487,41 @@ static int getInt(int sock, int size)
     return v;
 }
 
-int wsRecv(ClientInfo *info, unsigned char *dat, int len)
-{
-    int sock = info->socket;
-    unsigned char b;
-    if (read(sock, &b, 1)<0)
-        return -1;
-    int fin    = b & 0x80;
-    //int rsv1   = b & 0x40;
-    //int rsv2   = b & 0x20;
-    //int rsv3   = b & 0x10;
-    int opcode = b & 0x0f;
-    if (read(sock, &b, 1)<0)
-        return -1;
-    int hasMask = b & 0x80;
-    long paylen = b & 0x7f;
-    if (paylen == 126)
-        paylen = getInt(sock, 2);
-    else if (paylen == 127)
-        paylen = getInt(sock, 8);
-    unsigned char mask[4];
-    if (hasMask)
-        {
-        if (read(sock, mask, 4)<4)
-            return -1;
-        }
-    
-
-    //trace("fin: %d opcode:%d hasMask:%d len:%ld mask:%d", fin, opcode, hasMask, paylen, mask);
-    
-    if (paylen > len)
-        {
-        error("Buffer too small for data");
-        paylen = len;
-        }
-        
-    if (read(sock, dat, paylen)<0)
-        {
-        error("Read payload");
-        return -1;
-        }    
-        
-    if (hasMask)
-        {
-        int i;
-        for (i=0 ; i < paylen ; i++)
-            dat[i] ^= mask[i%4];
-        }
-        
-    dat[paylen] = '\0';
-    
-    return paylen;
-}
-
-
 
 
 /* #############################################################
 ##   H A N D L E    C L I E N T
 ############################################################# */
 
-
-ClientInfo *infoCreate()
+static void onOpenDefault(WsHandler *ws, char *msg)
 {
-    ClientInfo *obj = (ClientInfo *)malloc(sizeof(ClientInfo));
+}
+
+static void onCloseDefault(WsHandler *ws, char *msg)
+{
+}
+
+static void onMessageDefault(WsHandler *ws, unsigned char *data, int len)
+{
+}
+
+static void onErrorDefault(WsHandler *ws, char *msg)
+{
+}
+
+
+WsHandler *handlerCreate()
+{
+    WsHandler *obj = (WsHandler *)malloc(sizeof(WsHandler));
     if (!obj)
         {
         return NULL;
         }
-    memset(obj, 0, sizeof(ClientInfo));
+    memset(obj, 0, sizeof(WsHandler));
     return obj;
 }
 
-void infoDelete(ClientInfo *obj)
+void handlerDelete(WsHandler *obj)
 {
     if (obj)
         {
@@ -626,12 +589,12 @@ static void outf(int fd, char *fmt, ...)
 /**
  * Deliver a static file
  */
-static void serveFile(ClientInfo *info)
+static void serveFile(WsHandler *ws)
 {
-    char *resName = info->resourceName;
-    char *dirName = info->server->dirName;
-    char *buf = info->buf;
-    int sock = info->socket;
+    char *resName = ws->resourceName;
+    char *dirName = ws->server->dirName;
+    char *buf     = ws->buf;
+    int sock      = ws->socket;
     
     snprintf(buf, 255, "%s/%s", dirName, resName);
     FILE *f = fopen(buf, "rb");
@@ -657,7 +620,7 @@ static void serveFile(ClientInfo *info)
         
         while (len-- && !feof(f))
             {
-            int count = fread(buf, 1, CLIENT_BUFLEN, f);
+            int count = fread(buf, 1, WS_BUFLEN, f);
             if (count > 0)
                 write(sock, buf, count);
             }
@@ -675,19 +638,96 @@ static char *header =
     "Sec-WebSocket-Accept: %s\r\n"
     "\r\n";
     
+    
+static void handleClientWebsocket(WsServer *srv, WsHandler *ws)
+{
+    int sock = ws->socket;
+    
+    srv->onOpen(ws, "onOpen");
+    
+    int buflen = 1024 * 1024;
+    
+    unsigned char *recvBuf = (unsigned char *)malloc(buflen);
+    if (!recvBuf)
+        {
+        }
+    
+    while (1)
+        {
+        unsigned char b;
+        if (read(sock, &b, 1)<0)
+            break;
+        int fin    = b & 0x80;
+        //int rsv1   = b & 0x40;
+        //int rsv2   = b & 0x20;
+        //int rsv3   = b & 0x10;
+        int opcode = b & 0x0f;
+        if (read(sock, &b, 1)<0)
+            break;
+        int hasMask = b & 0x80;
+        long paylen = b & 0x7f;
+        if (paylen == 126)
+            paylen = getInt(sock, 2);
+        else if (paylen == 127)
+            paylen = getInt(sock, 8);
+        unsigned char mask[4];
+        if (hasMask)
+            {
+            if (read(sock, mask, 4)<4)
+                break;;
+            }
+        
+    
+        //trace("fin: %d opcode:%d hasMask:%d len:%ld mask:%d", fin, opcode, hasMask, paylen, mask);
+        
+        if (paylen > buflen)
+            {
+            error("Buffer too small for data");
+            paylen = buflen;
+            }
+            
+        if (read(sock, recvBuf, paylen)<0)
+            {
+            error("Read payload");
+            break;
+            }    
+            
+        if (hasMask)
+            {
+            int i;
+            for (i=0 ; i < paylen ; i++)
+                recvBuf[i] ^= mask[i%4];
+            }
+            
+        recvBuf[paylen] = '\0';
+        
+        
+        srv->onMessage(ws, recvBuf, paylen);
+        
+    }
+    
+    
+    free(recvBuf);
+    srv->onClose(ws, "onClose");
+    
+    
+}
+ 
+    
 /**
  * This is the thread for handling a client request.  One is spawned per client
  */
 static void *handleClient(void *ctx)
 {
-    ClientInfo *info = (ClientInfo *)ctx;
-    char *buf = info->buf;
-    int sock = info->socket;
+    WsHandler *ws = (WsHandler *)ctx;
+    WsServer *srv = ws->server;
+    char *buf     = ws->buf;
+    int sock      = ws->socket;
     
     int wsrequest = FALSE;
     FILE *in = fdopen(sock, "r");
     
-    fgets(buf, CLIENT_BUFLEN, in);
+    fgets(buf, WS_BUFLEN, in);
     char *str = trim(buf);
     char *savptr;
     char *tok = strtok_r(str, " ", &savptr);
@@ -698,7 +738,7 @@ static void *handleClient(void *ctx)
     else
         {
         tok = strtok_r(NULL, " ", &savptr);
-        strncpy(info->resourceName, tok, CLIENT_BUFLEN);
+        strncpy(ws->resourceName, tok, WS_BUFLEN);
         char keybuf[40];
         keybuf[0]=0;
         while (fgets(buf, 255, in))
@@ -724,23 +764,20 @@ static void *handleClient(void *ctx)
             {
             outf(sock, header, keybuf);
             
-            WsHandlerFunc *func = info->server->handlerFunc;
-            if (func)
-                {
-                (*func)(info);
-                }
+            handleClientWebsocket(srv, ws);
+
             }
         else
             {
-            serveFile(info);
+            serveFile(ws);
             }
         }
 
     fclose(in);
     
-    close(info->socket);
+    close(sock);
     
-    infoDelete(info);
+    handlerDelete(ws);
     
     return NULL;
 }
@@ -768,18 +805,19 @@ static void *listenForClients(void *ctx)
             error("Could not accept connection: %s", strerror(errno));
             }
         trace("have new client");
-        ClientInfo *info = infoCreate();
-        if (!info)
+        WsHandler *ws = handlerCreate();
+        if (!ws)
             {
-            error("Could not create client info record");
+            error("Could not create client handler");
             continue;
             }
-        info->server  = obj;
-        info->socket  = clisock;
-        info->context = obj->context;
+
+        ws->server  = obj;
+        ws->socket  = clisock;
+        ws->context = ws->server->context;
         
         pthread_t thread;
-        int rc = pthread_create(&thread, NULL, handleClient, (void *)info);
+        int rc = pthread_create(&thread, NULL, handleClient, (void *)ws);
         if (rc)
             {
             error("ERROR; return code from pthread_create() is %d", rc);
@@ -813,14 +851,23 @@ int wsServe(WsServer *obj)
 
 
 
-WsServer *wsCreate(WsHandlerFunc *func, void *context, char *dir, int port)
+WsServer *wsCreate(
+    void (*onOpen)(WsHandler *, char *),
+    void (*onClose)(WsHandler *, char *),
+    void (*onMessage)(WsHandler *, unsigned char *, int),
+    void (*onError)(WsHandler *, char *),
+    void *context, char *dir, int port
+)
 {
     WsServer *obj = (WsServer *)malloc(sizeof(WsServer));
     if (!obj)
         {
         return NULL;
         }
-    obj->handlerFunc = func;
+    obj->onOpen    = (onOpen   ) ? onOpen    : onOpenDefault;
+    obj->onClose   = (onClose  ) ? onClose   : onCloseDefault;
+    obj->onMessage = (onMessage) ? onMessage : onMessageDefault;
+    obj->onError   = (onError  ) ? onError   : onErrorDefault;
     obj->context = context;
     strncpy(obj->dirName, dir, 80);
     obj->port = port;

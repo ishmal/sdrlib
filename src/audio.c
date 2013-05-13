@@ -188,6 +188,7 @@ static int paCallback(const void *inputBuffer, void *outputBuffer,
 }
 
 
+#if 1
 /**
  * Queue up data to be read by paCallback
  */
@@ -201,6 +202,21 @@ int audioPlay(Audio *audio, float *data, int size)
         }
     return ret;
 }
+#else
+int audioPlay(Audio *audio, float *data, int size)
+{
+    PaStream *stream = audio->stream;
+    
+    int err = Pa_WriteStream(stream, data, size);
+    if (err != paNoError)
+        {
+        error("Audio write: %s", Pa_GetErrorText(err));
+        }
+    return err;
+}
+
+
+#endif
 
 
 

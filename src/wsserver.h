@@ -28,56 +28,43 @@
 
 typedef struct WsServer WsServer;
 
-typedef struct ClientInfo ClientInfo;
+typedef struct WsHandler WsHandler;
+#define WS_BUFLEN (100 * 1024)
 
-#define CLIENT_BUFLEN 256
-struct ClientInfo
+struct WsHandler
 {
     WsServer *server;
     int socket;
     void *context;
-    char resourceName[CLIENT_BUFLEN];
-    char buf[CLIENT_BUFLEN];
+    char resourceName[WS_BUFLEN];
+    char buf[WS_BUFLEN];
 };
 
-typedef void (WsHandlerFunc)(ClientInfo *);
-
-
-/**
- *
- */
-ClientInfo *infoCreate();
-
-/**
- *
- */
-void infoDelete(ClientInfo *obj);
-
-
-/**
- *
- */
-int wsSend(ClientInfo *info, char *str);
-
-
-/**
- *
- */
-int wsSendBinary(ClientInfo *info, unsigned char *dat, long len);
 
 
 
 /**
  *
  */
-int wsRecv(ClientInfo *info, unsigned char *dat, int len);
+int wsSend(WsHandler *ws, char *str);
+
+
+/**
+ *
+ */
+int wsSendBinary(WsHandler *ws, unsigned char *dat, long len);
 
 
 
 /**
  *
  */
-WsServer *wsCreate(WsHandlerFunc *func, void * context, char *dir, int port);
+WsServer *wsCreate(
+    void (*onOpen)(WsHandler *, char *),
+    void (*onClose)(WsHandler *, char *),
+    void (*onMessage)(WsHandler *, unsigned char *, int),
+    void (*onError)(WsHandler *, char *),
+    void * context, char *dir, int port);
 
 
 

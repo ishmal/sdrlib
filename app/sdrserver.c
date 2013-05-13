@@ -249,27 +249,33 @@ int parseAndExecute(SdrLib *sdr, char *buf)
 
 
 
-static void sdrServer(ClientInfo *info)
+
+
+static void onOpen(WsHandler *ws, char *msg)
 {
-    SdrServer *svr = (SdrServer *) info->context;
+    SdrServer *svr = (SdrServer *) ws->context;
     SdrLib *sdr = svr->sdr;
-    unsigned char *buf = (unsigned char *)info->buf;
-    
-    int cont = TRUE;
-    while (cont)
-        {
-        int ret = wsRecv(info, buf, CLIENT_BUFLEN);
-        if (ret < 0)
-            {
-            }
-        else
-            {
-            ret = parseAndExecute(sdr, (char *)buf);
-            if (ret < 0)
-                break;
-            }
-        
-        }
+}
+
+static void onClose(WsHandler *ws, char *msg)
+{
+    SdrServer *svr = (SdrServer *) ws->context;
+    SdrLib *sdr = svr->sdr;
+}
+
+static void onMessage(WsHandler *ws, unsigned char *data, int len)
+{
+    SdrServer *svr = (SdrServer *) ws->context;
+    SdrLib *sdr = svr->sdr;
+
+    int ret = parseAndExecute(sdr, (char *)data);
+
+}
+
+static void onError(WsHandler *ws, char *msg)
+{
+    SdrServer *svr = (SdrServer *) ws->context;
+    SdrLib *sdr = svr->sdr;
 }
 
 
@@ -283,7 +289,7 @@ static int doRun(char *dir, int port)
         {
         return FALSE;
         }
-    WsServer *svr = wsCreate(sdrServer, (void *)ctx, dir, port);
+    WsServer *svr = wsCreate(onOpen, onClose, onMessage, onError, (void *)ctx, dir, port);
     int ret = TRUE;
     if (svr)
         {

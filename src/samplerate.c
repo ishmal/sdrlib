@@ -151,30 +151,22 @@ void decimatorUpdate(Decimator *dec, float complex *data, int dataLen, ComplexOu
 
 DelayVal *delayCreate(int size)
 {
+    if (size < 2)
+        return NULL;
     int allocSize = size * sizeof(DelayVal);
     DelayVal *xs = (DelayVal *)malloc(allocSize);
     if (!xs)
         return NULL;
     memset(xs, 0, allocSize);
-    //initialization. slow and verbose, but clear
+    DelayVal *prev = &(xs[size-1]);
+    DelayVal *curr = xs;
     int i = 0;
     for ( ; i < size ; i++)
         {
-        if (i==0)
-            {
-            xs[i].prev = &(xs[size-1]);
-            xs[i].next = &(xs[i+1]);
-            }
-        else if (i==size-1)
-            {
-            xs[i].prev = &(xs[i-1]);
-            xs[i].next = xs;
-            }
-        else
-            {
-            xs[i].prev = &(xs[i-1]);
-            xs[i].next = &(xs[i+1]);
-            }
+        prev->next = curr;
+        curr->prev = prev;
+        prev = curr;
+        curr++;
         }
     return xs;
 }
@@ -212,9 +204,9 @@ Ddc *ddcCreate(int size, float vfoFreq, float pbLoOff, float pbHiOff, float samp
     obj->head = obj->delayLine;
     obj->inRate = sampleRate;
     ddcSetFreqs(obj, vfoFreq, pbLoOff, pbHiOff);
-    obj->acc        = -1.0;
-    obj->bufPtr     = 0;
-    obj->vfoPhase   = 0.0 + 1.0 * I;
+    obj->acc      = -1.0;
+    obj->bufPtr   = 0;
+    obj->vfoPhase = 0.0 + 1.0 * I;
     return obj;
 }
 
@@ -222,7 +214,7 @@ void ddcDelete(Ddc *obj)
 {
     if (obj)
         {
-        free(obj->delayLine);
+        delayDelete(obj->delayLine);
         free(obj->coeffs);
         free(obj);
         }
@@ -331,12 +323,13 @@ void ddcUpdate(Ddc *obj, float complex *data, int dataLen, ComplexOutputFunc *fu
     float acc          = obj->acc;
     float complex *buf = obj->buf;
     int   bufPtr       = obj->bufPtr;
+    float complex vfoPhase = obj->vfoPhase;
     
     while (dataLen--)
         {
         //advance the VFO and convolve the input stream
-        obj->vfoPhase *= obj->vfoFreq;
-        float complex sample = (*data++) * obj->vfoPhase;
+        vfoPhase *= obj->vfoFreq;
+        float complex sample = (*data++) * vfoPhase;
         head->c = sample;
         //perform our fractional decimation
         //do the Bresenham's thing
@@ -359,14 +352,15 @@ void ddcUpdate(Ddc *obj, float complex *data, int dataLen, ComplexOutputFunc *fu
                 {
                 func(buf, DDC_BUFSIZE, context);
                 bufPtr = 0;
-                obj->vfoPhase /= cabsf(obj->vfoPhase); //heal
+                vfoPhase /= cabsf(vfoPhase); //heal
                 }
             }
         head = head->next;
         }
-    obj->head = head;
-    obj->acc  = acc;
-    obj->bufPtr = bufPtr;
+    obj->vfoPhase = vfoPhase;
+    obj->head     = head;
+    obj->acc      = acc;
+    obj->bufPtr   = bufPtr;
 }
 
 
