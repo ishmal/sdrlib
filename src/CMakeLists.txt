@@ -1,3 +1,4 @@
+add_definitions(-std=c99)
 
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
 

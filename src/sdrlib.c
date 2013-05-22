@@ -30,6 +30,7 @@
 #include "sdrlib.h"
 
 #include "audio.h"
+#include "codec.h"
 #include "demod.h"
 #include "device.h"
 #include "fft.h"
@@ -72,6 +73,7 @@ SdrLib *sdrCreate(void *context, UintOutputFunc *psCallback)
     sdr->demod     = sdr->demodFm;
     sdr->mode      = MODE_FM;
     sdr->audio     = audioCreate();
+    sdr->codec     = codecCreate();
     sdr->resampler = resamplerCreate(21, sdr->audio->sampleRate, sdr->audio->sampleRate);
     
     sdrSetAfGain(sdr, 0.0);
@@ -92,6 +94,7 @@ int sdrDelete(SdrLib *sdr)
         d->delete(d->ctx);
         }
     audioDelete(sdr->audio);
+    codecDelete(sdr->codec);
     fftDelete(sdr->fft);
     //vfoDelete(sdr->vfo);
     //firDelete(sdr->bpf);

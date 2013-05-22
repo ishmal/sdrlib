@@ -66,7 +66,7 @@ void codecDelete(Codec *obj)
 
 
 
-int codecEncode(Codec *obj, float *data, int datalen)
+int codecEncode(Codec *obj, float *data, int datalen, ByteOutputFunc *func, void *context)
 {
     float *inbuf = obj->enc_inbuf;
     int inptr = obj->enc_inbuf_ptr;
@@ -78,7 +78,8 @@ int codecEncode(Codec *obj, float *data, int datalen)
             {
             inptr = 0;
             int len = opus_encode_float(obj->enc, inbuf, FRAME_SIZE, obj->enc_outbuf, MAX_PACKET);
-            //do something with the outbuf
+            if (func)
+                (*func)(obj->enc_outbuf, len, context);
             }
         }
         

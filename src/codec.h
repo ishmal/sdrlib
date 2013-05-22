@@ -31,7 +31,9 @@
 
 #include <opus.h>
 
-typedef struct Codec Codec;
+#include <sdrlib.h>
+
+
 
 
 #define MAX_PACKET (1024 * 16)
@@ -63,7 +65,7 @@ void codecDelete(Codec *obj);
 /**
  *
  */
-int codecEncode(Codec *obj, float *data, int datalen);
+int codecEncode(Codec *obj, float *data, int datalen, ByteOutputFunc *func, void *context);
 
 
 

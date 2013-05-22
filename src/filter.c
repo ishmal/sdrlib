@@ -54,8 +54,7 @@ Fir *firCreate(int size)
         free(fir);
         return NULL;
         }
-    int i = 0;
-    for ( ; i<size ; i++)
+    for (int i=0 ; i<size ; i++)
         {
         fir->coeffs[i] = 0.0;
         fir->delayLine[i] = 0.0;
@@ -94,8 +93,7 @@ float firUpdate(Fir *fir, float sample)
     int idx = delayIndex;
     float *coeff = fir->coeffs;
     int size = fir->size;
-    int count = size;
-    while (count--)
+    for (int count = size ; count > 0 ; count--)
         {
         float v = delayLine[idx];
         idx = (idx+1) % size;

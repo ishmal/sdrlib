@@ -39,7 +39,7 @@ extern "C" {
 typedef void ComplexOutputFunc(float complex *data, int size, void *ctx);
 #endif
 
-typedef void UbyteOutputFunc(unsigned char *data, int size, void *ctx);
+typedef void ByteOutputFunc(unsigned char *data, int size, void *ctx);
 typedef void UintOutputFunc(unsigned int *ps, int size, void *ctx);
 typedef void FloatOutputFunc(float *data, int size, void *ctx);
 
@@ -53,7 +53,8 @@ typedef void FloatOutputFunc(float *data, int size, void *ctx);
  * Forward declarations, hidden from clients
  */
 typedef struct Audio       Audio; 
-typedef struct Biquad      Biquad; 
+typedef struct Biquad      Biquad;
+typedef struct Codec       Codec; 
 typedef struct Ddc         Ddc; 
 typedef struct Decimator   Decimator; 
 typedef struct Demodulator Demodulator; 
@@ -98,7 +99,8 @@ typedef struct
     Demodulator *demodLsb;
     Demodulator *demodUsb;
     Resampler   *resampler;
-    Audio *audio;
+    Audio       *audio;
+    Codec       *codec;
 } SdrLib;
 
 
