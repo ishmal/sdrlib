@@ -99,7 +99,9 @@ typedef struct
     Demodulator *demodLsb;
     Demodulator *demodUsb;
     Resampler   *resampler;
+    int         useAudio;
     Audio       *audio;
+    ByteOutputFunc *codecFunc;
     Codec       *codec;
 } SdrLib;
 

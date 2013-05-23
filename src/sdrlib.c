@@ -367,7 +367,10 @@ static void resamplerOutput(float *buf, int size, void *ctx)
 {
     SdrLib *sdr = (SdrLib *)ctx;
     //trace("Push audio:%d", size);
-    audioPlay(sdr->audio, buf, size);
+    if (sdr->useAudio)
+        audioPlay(sdr->audio, buf, size);
+    if (sdr->codecFunc)
+        codecEncode(sdr->codec, buf, size, sdr->codecFunc, sdr->context);
 }
 
 
