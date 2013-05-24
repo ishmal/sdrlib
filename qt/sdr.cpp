@@ -57,7 +57,8 @@ static void powerSpectrumCallback(unsigned int *ps, int size, void *ctx)
 
 Sdr::Sdr()
 {
-    sdr = sdrCreate((void *)this, powerSpectrumCallback);
+    sdr = sdrCreate((void *)this, powerSpectrumCallback, NULL);
+    sdrEnableAudio(sdr, true);
     freqOffset = 0;
     ui.setupUi(this);
     waterfall = new Waterfall(*this);

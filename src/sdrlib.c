@@ -43,15 +43,38 @@
 
 static void *sdrReaderThread(void *ctx);
 
-static void defaultPowerSpectrumCallback(unsigned int *ps, int size, void *ctx)
+/**
+ * Our main context
+ */
+struct SdrLib
 {
-    //nothing here.  dummy function
-}
+    int            deviceCount;
+    Device         *devices[SDR_MAX_DEVICES];
+    Device         *device;
+    pthread_t      thread;
+    int            running; //state of the reader thread
+    Fft            *fft;
+    void           *context; //context for any client code calling me
+    UintOutputFunc *psFunc; //for outputting the power spectrum
+    ByteOutputFunc *codecFunc;
+    Ddc            *ddc;
+    Mode           mode;
+    Demodulator    *demod;
+    Demodulator    *demodNull;
+    Demodulator    *demodAm;
+    Demodulator    *demodFm;
+    Demodulator    *demodLsb;
+    Demodulator    *demodUsb;
+    Resampler      *resampler;
+    int            audioEnabled;
+    Audio          *audio;
+    Codec          *codec;
+};
 
 
 /**
  */  
-SdrLib *sdrCreate(void *context, UintOutputFunc *psCallback)
+SdrLib *sdrCreate(void *context, UintOutputFunc *psFunc, ByteOutputFunc *codecFunc)
 {
     SdrLib * sdr = (SdrLib *) malloc(sizeof(SdrLib));
     memset(sdr, 0, sizeof(SdrLib));
@@ -62,8 +85,9 @@ SdrLib *sdrCreate(void *context, UintOutputFunc *psCallback)
         //but dont fail. wait until start()
         }
     sdr->context   = context;
+    sdr->psFunc    = psFunc;
+    sdr->codecFunc = codecFunc;
     sdr->fft       = fftCreate(16384);
-    sdr->psFunc    = (psCallback) ? psCallback : defaultPowerSpectrumCallback;
     sdr->ddc       = ddcCreate(21, 0.0, -5000.0, 5000.0, 2048000.0);
     sdr->demodNull = demodNullCreate();
     sdr->demodFm   = demodFmCreate();
@@ -87,8 +111,7 @@ SdrLib *sdrCreate(void *context, UintOutputFunc *psCallback)
  */   
 int sdrDelete(SdrLib *sdr)
 {
-    int i=0;
-    for (; i < sdr->deviceCount ; i++)
+    for (int i = 0 ; i < sdr->deviceCount ; i++)
         {
         Device *d = sdr->devices[i];
         d->delete(d->ctx);
@@ -345,6 +368,17 @@ int sdrSetMode(SdrLib *sdr, Mode mode)
 }
 
 
+/**
+ * Determine if we want speaker output
+ * @param sdrlib an SDRLib instance.
+ * @param enabled 0 to disable, !=0 enabled
+ */   
+void sdrEnableAudio(SdrLib *sdr, int enabled)
+{
+    sdr->audioEnabled = enabled;   
+}
+
+
 
 
 /*############################################################################
@@ -359,7 +393,8 @@ static void fftOutput(unsigned int *vals, int size, void *ctx)
 {
     SdrLib *sdr = (SdrLib *)ctx;
     UintOutputFunc *psFunc = sdr->psFunc;
-    (*psFunc)(vals, size, sdr->context);
+    if (psFunc)
+        (*psFunc)(vals, size, sdr->context);
 }
 
 
@@ -367,7 +402,7 @@ static void resamplerOutput(float *buf, int size, void *ctx)
 {
     SdrLib *sdr = (SdrLib *)ctx;
     //trace("Push audio:%d", size);
-    if (sdr->useAudio)
+    if (sdr->audioEnabled)
         audioPlay(sdr->audio, buf, size);
     if (sdr->codecFunc)
         codecEncode(sdr->codec, buf, size, sdr->codecFunc, sdr->context);

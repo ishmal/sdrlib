@@ -58,8 +58,19 @@ typedef struct SdrServer SdrServer;
 struct SdrServer
 {
     SdrLib *sdr;
+    WsServer *wsServer;
 };
 
+
+static void codecOutput(unsigned char *dat, int len, void *context)
+{
+    SdrServer *svr = (SdrServer *)context; 
+    WsHandler *ws = wsGetClientWs(svr->wsServer);
+    if (ws)
+        {
+        wsSendBinary(ws, dat, len);
+        } 
+}
 
 
 SdrServer *svrCreate()
@@ -69,7 +80,7 @@ SdrServer *svrCreate()
         {
         return NULL;
         }
-    svr->sdr = sdrCreate(NULL, NULL);  //TODO: important to supply these values
+    svr->sdr = sdrCreate(svr, NULL, codecOutput);  //TODO: important to supply these values
     if (!svr->sdr)
         {
         free(svr);
@@ -293,6 +304,7 @@ static int doRun(char *dir, int port)
     int ret = TRUE;
     if (svr)
         {
+        ctx->wsServer = svr;
         wsServe(svr);
         ret = FALSE;
         }
@@ -328,7 +340,7 @@ int main(int argc, char **argv)
         switch (c)
             {
             case 'd':
-                dir = optarg;;
+                dir = optarg;
                 break;
             case 'p':
                 port = atoi(optarg);

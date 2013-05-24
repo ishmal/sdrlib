@@ -65,6 +65,7 @@ typedef struct Resampler   Resampler;
 typedef struct Queue       Queue; 
 typedef struct Vfo         Vfo; 
 
+typedef struct SdrLib      SdrLib;
 
 typedef enum
 {
@@ -75,43 +76,13 @@ typedef enum
     MODE_USB
 } Mode;
 
-/**
- * Our main context
- */
-typedef struct
-{
-    int deviceCount;
-    Device *devices[SDR_MAX_DEVICES];
-    Device *device;
-    pthread_t thread;
-    int running; //state of the reader thread
-    Fft *fft;
-    void *context; //context for any client code calling me
-    UintOutputFunc *psFunc; //for outputting the power spectrum
-    //Vfo *vfo;
-    //Fir *bpf;
-    Ddc *ddc;
-    Mode mode;
-    Demodulator *demod;
-    Demodulator *demodNull;
-    Demodulator *demodAm;
-    Demodulator *demodFm;
-    Demodulator *demodLsb;
-    Demodulator *demodUsb;
-    Resampler   *resampler;
-    int         useAudio;
-    Audio       *audio;
-    ByteOutputFunc *codecFunc;
-    Codec       *codec;
-} SdrLib;
-
 
 
 /**
  * Create a new SdrLib instance.
  * @return a new SdrLib instance
  */  
-SdrLib *sdrCreate(void *context, UintOutputFunc *psCallback);
+SdrLib *sdrCreate(void *context, UintOutputFunc *psFunc, ByteOutputFunc *codecFunc);
 
 
 /**
@@ -238,8 +209,12 @@ int sdrGetMode(SdrLib *sdrlib);
 int sdrSetMode(SdrLib *sdrlib, Mode mode);
 
 
-
-void sdrSetPowerSpectrumFunc(SdrLib *sdrlib, UintOutputFunc *func, void *ctx);
+/**
+ * Determine if we want speaker output
+ * @param sdrlib an SDRLib instance.
+ * @param enabled 0 to disable, !=0 enabled
+ */   
+void sdrEnableAudio(SdrLib *sdr, int enabled);
 
 
 #ifdef __cplusplus

@@ -48,7 +48,7 @@ function SdrClient(anchorName)
     }
 
     var self = this;
-
+    
 
     var anchor = $(anchorName);
     var sdrBox = $("<div>");
@@ -68,18 +68,26 @@ function SdrClient(anchorName)
     sdrBox.append(startBtn, exportBtn);
 
 
-    var context = new webkitAudioContext();
+    var context = new AudioContext();
     var source = context.createBufferSource();
 
     
-     
+    
+
 
     function play(data) {
-        context.decodeAudioData(data, function(buffer) {
+        
+        function success(buffer) {
             source.buffer = buffer;
     	    source.connect(context.destination);
-        	source.noteOn(0); 
-        });
+        	source.start(0); 
+        }
+        
+        function failure(msg) {
+            error(msg);
+        }
+        
+        context.decodeAudioData(data, success, failure);
     }
 
 
@@ -92,8 +100,8 @@ function SdrClient(anchorName)
     }
     
     function onMessage(evt) {
-        trace("rcv:" + evt.data);
-        var currTime = time();
+        trace("rcv:" + evt.data.byteLength);
+        play(evt.data);
     }
 
     function onError(evt) {

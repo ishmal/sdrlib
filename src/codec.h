@@ -30,6 +30,7 @@
 
 
 #include <opus.h>
+#include <ogg/ogg.h>
 
 #include <sdrlib.h>
 
@@ -41,6 +42,7 @@
 struct Codec
 {
     OpusEncoder *enc;
+    ogg_stream_state os;
     float enc_inbuf[FRAME_SIZE];
     int enc_inbuf_ptr;
     unsigned char enc_outbuf[MAX_PACKET];

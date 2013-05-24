@@ -194,7 +194,7 @@ int parseAndExecute(SdrLib *sdr, char *buf)
 
 int cmdloop()
 {
-    SdrLib *sdr = sdrCreate(NULL, NULL);
+    SdrLib *sdr = sdrCreate(NULL, NULL, NULL);
     if (!sdr)
         return FALSE;
     char *inbuf = (char *)malloc(BUFLEN+1);

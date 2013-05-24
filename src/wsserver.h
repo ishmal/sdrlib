@@ -64,7 +64,7 @@ WsServer *wsCreate(
     void (*onClose)(WsHandler *, char *),
     void (*onMessage)(WsHandler *, unsigned char *, int),
     void (*onError)(WsHandler *, char *),
-    void * context, char *dir, int port);
+    void *context, char *dir, int port);
 
 
 
@@ -81,6 +81,10 @@ void wsDelete(WsServer *obj);
 int wsServe(WsServer *obj);
 
 
+/**
+ * Return an existing client websocket, if any, else NULL
+ */
+WsHandler *wsGetClientWs(WsServer *obj);
 
 
 #endif  /* _WSSERVER_H_ */

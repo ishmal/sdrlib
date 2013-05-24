@@ -372,6 +372,7 @@ struct WsServer
     void (*onMessage)(WsHandler *ws, unsigned char *data, int len);
     void (*onError)(WsHandler *ws, char *msg);
     void *context;
+    WsHandler *clientWs;
 };
 
 
@@ -643,6 +644,8 @@ static void handleClientWebsocket(WsServer *srv, WsHandler *ws)
 {
     int sock = ws->socket;
     
+    srv->clientWs = ws;
+    
     srv->onOpen(ws, "onOpen");
     
     int buflen = 1024 * 1024;
@@ -709,6 +712,7 @@ static void handleClientWebsocket(WsServer *srv, WsHandler *ws)
     
     free(recvBuf);
     srv->onClose(ws, "onClose");
+    srv->clientWs = NULL;
     
     
 }
@@ -812,9 +816,9 @@ static void *listenForClients(void *ctx)
             continue;
             }
 
-        ws->server  = obj;
-        ws->socket  = clisock;
-        ws->context = ws->server->context;
+        ws->server   = obj;
+        ws->socket   = clisock;
+        ws->context  = ws->server->context;
         
         pthread_t thread;
         int rc = pthread_create(&thread, NULL, handleClient, (void *)ws);
@@ -841,6 +845,11 @@ int wsServe(WsServer *obj)
     obj->thread = thread;
     pthread_join(obj->thread, NULL);
     return TRUE;
+}
+
+WsHandler *wsGetClientWs(WsServer *obj)
+{
+    return obj->clientWs;
 }
 
 
