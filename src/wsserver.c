@@ -34,7 +34,7 @@
 #include <sys/stat.h>
 
 
-#ifdef WIN32
+#ifdef _WIN32
 #include <winsock.h>
 typedef int Socklen;
 #else

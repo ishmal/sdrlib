@@ -68,14 +68,14 @@ Codec *codecCreate()
     head[16] = 0;  //gain, 16 bits.  0 recommended
     head[17] = 0;
     head[18] = 0;
-    ogg_stream_packet op;
+    ogg_packet op;
     op.packet     = head;
     op.bytes      = 19;
     op.b_o_s      = 1;
     op.e_o_s      = 0;
     op.granulepos = 0;
     op.packetno   = 0;
-    ogg_stream_packetin(&os, &op);
+    ogg_stream_packetin(&(obj->os), &op);
     return obj;
 }
 
@@ -105,7 +105,7 @@ int codecEncode(Codec *obj, float *data, int datalen, ByteOutputFunc *func, void
             {
             inptr = 0;
             int len = opus_encode_float(obj->enc, inbuf, FRAME_SIZE, obj->enc_outbuf, MAX_PACKET);
-            ogg_stream_packet op;
+            ogg_packet op;
             op.packet = obj->enc_outbuf;
             op.bytes  = len;
             op.b_o_s=1;
