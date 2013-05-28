@@ -37,15 +37,19 @@
 
 
 
-#define MAX_PACKET (1024 * 16)
+#define OPUS_PACKET (1024 * 16)
+#define OGG_PACKET (1024 * 16)
 #define FRAME_SIZE (2880)
 struct Codec
 {
     OpusEncoder *enc;
     ogg_stream_state os;
-    float enc_inbuf[FRAME_SIZE];
-    int enc_inbuf_ptr;
-    unsigned char enc_outbuf[MAX_PACKET];
+    float inbuf[FRAME_SIZE];
+    int inbufPtr;
+    int packetCount;
+    unsigned char opusbuf[OPUS_PACKET];
+    int oggSerial;
+    unsigned char oggbuf[OGG_PACKET];
 };
 
 
