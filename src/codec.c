@@ -55,26 +55,22 @@ Codec *codecCreate()
         free(obj);
         return NULL;
         }
-    unsigned char head[19];
-    strcpy(head, "OpusHead");
-    head[8]  = 1;  //version
-    head[9]  = 1;  //nr channels  1 or 2
-    head[10] = 0;  //16 bits, pre-skip
-    head[11] = 0;
-    head[12] = 0x80;  //samplerate, 32 bits, little-endian
-    head[13] = 0xbb;   //0xbb80 == 48000
-    head[14] = 0;
-    head[15] = 0;
-    head[16] = 0;  //gain, 16 bits.  0 recommended
-    head[17] = 0;
-    head[18] = 0;
+    unsigned char head[] = {
+        'O', 'p', 'u', 's', 'H', 'e', 'a', 'd', 
+        1,                //version
+        1,                //nr channels  1 or 2
+        0, 0,             //16 bits, pre-skip
+        0x80, 0xbb, 0, 0, //samplerate, 32 bits, little-endian. 0xbb80 == 48000
+        0, 0,             //gain, 16 bits.  0 recommended
+        0                 // mapping, 0=single stream
+    };
     ogg_packet op;
     op.packet     = head;
-    op.bytes      = 19;
+    op.bytes      = sizeof(head);
     op.b_o_s      = 1;
     op.e_o_s      = 0;
     op.granulepos = 0;
-    op.packetno   = 0;
+    op.packetno   = 0;  //currently ignored by libogg
     ogg_stream_packetin(&(obj->os), &op);
     return obj;
 }
@@ -111,7 +107,7 @@ int codecEncode(Codec *obj, float *data, int datalen, ByteOutputFunc *func, void
             op.b_o_s=1;
             op.e_o_s=0;
             op.granulepos=0;
-            op.packetno=0;
+            op.packetno=0; //currently ignored by libogg
             ogg_stream_packetin(&(obj->os), &op);
             ogg_page page;
             if (ogg_stream_pageout(&(obj->os), &page))
