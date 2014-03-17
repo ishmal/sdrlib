@@ -65,7 +65,7 @@ void resamplerDelete(Resampler *r)
     private def lowPassCoeffs(decimation: Int, size: Int) : Array[Double] =
         {
         val twopi = 2.0 * math.Pi
-        val omega = twopi / decimation
+        val omega = Math.Pi / decimation
         val bottom = -0.5 * size
         val xs = Array.tabulate(size)( idx =>
             {
